@@ -1,0 +1,12 @@
+# Placeholder para imagen de rifa
+
+Este es un archivo placeholder que puedes reemplazar con imágenes reales.
+
+Para agregar imágenes:
+1. Guarda las imágenes en esta carpeta
+2. Usa los nombres sugeridos en el README.md
+3. Actualiza las referencias en raffle-images.constants.ts
+
+Formatos recomendados: JPG, PNG, WebP
+Tamaño: 800x600px o similar
+Peso máximo: 500KB

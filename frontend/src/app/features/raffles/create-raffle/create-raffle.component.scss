@@ -1,0 +1,466 @@
+// Create Raffle Component Styles
+.modern-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f4c75 100%);
+  padding: 0;
+  margin: 0;
+
+  // Hero Section (reutilizado del dashboard)
+  .hero-section {
+    position: relative;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 2rem;
+
+    .hero-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg,
+        rgba(26, 26, 46, 0.9) 0%,
+        rgba(22, 33, 62, 0.8) 50%,
+        rgba(15, 76, 117, 0.7) 100%);
+
+      .floating-shapes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+
+        .shape {
+          position: absolute;
+          border-radius: 50%;
+          background: linear-gradient(45deg, rgba(64, 224, 208, 0.1), rgba(255, 0, 150, 0.1));
+          animation: float 6s ease-in-out infinite;
+
+          &.shape-1 {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+          }
+
+          &.shape-2 {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+          }
+
+          &.shape-3 {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 70%;
+            animation-delay: 4s;
+          }
+        }
+      }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: white;
+
+      .hero-title {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        margin: 0 0 1rem 0;
+        color: white;
+        text-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.8),
+          0 0 20px rgba(0, 212, 255, 0.5);
+        // Eliminamos background-clip para evitar problemas de visibilidad
+        filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
+      }      .hero-subtitle {
+        font-size: 1.2rem;
+        margin: 0;
+        opacity: 0.9;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+    }
+  }
+}
+
+// Form Container
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+
+  .raffle-form {
+    .form-section {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+        .section-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(45deg, #00d4ff, #ff0095);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 1rem;
+
+          mat-icon {
+            color: white;
+            font-size: 24px;
+          }
+        }
+
+        .section-title {
+          h2 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+          }
+
+          p {
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0.25rem 0 0;
+            font-size: 0.9rem;
+            font-weight: 400;
+          }
+        }
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 1.5rem;
+
+        &.two-columns {
+          grid-template-columns: 1fr 1fr;
+
+          @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .full-width {
+          grid-column: 1 / -1;
+        }
+      }
+
+      // Material Form Fields
+      ::ng-deep {
+        .mat-mdc-form-field {
+          width: 100%;
+
+          .mat-mdc-form-field-focus-overlay {
+            background-color: rgba(255, 255, 255, 0.04);
+          }
+
+          .mdc-notched-outline {
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing {
+              border-color: rgba(255, 255, 255, 0.5) !important;
+              border-width: 2px;
+            }
+          }
+
+          &.mat-focused .mdc-notched-outline {
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing {
+              border-color: #00d4ff !important;
+              border-width: 2px;
+            }
+          }
+
+          // Ocultar el label flotante de Material y usar nuestro propio label
+          .mat-mdc-form-field-label {
+            display: none !important;
+          }
+
+          .mat-mdc-input-element {
+            color: white !important;
+            font-weight: 400;
+            font-size: 16px;
+
+            &::placeholder {
+              color: rgba(255, 255, 255, 0.6) !important;
+              font-weight: 300;
+            }
+          }
+
+          .mat-mdc-form-field-icon-suffix {
+            color: rgba(255, 255, 255, 0.8) !important;
+          }
+
+          .mat-mdc-select-value {
+            color: white !important;
+            font-weight: 400;
+          }
+
+          .mat-mdc-select-arrow {
+            color: rgba(255, 255, 255, 0.6);
+          }
+        }
+
+        .mat-mdc-option {
+          .scope-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+          }
+        }
+      }
+
+      // Custom field labels - externos y encima de los campos
+      .field-label {
+        display: block;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 8px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+        .required {
+          color: #ff4757;
+          margin-left: 4px;
+        }
+      }
+    }
+  }
+}
+
+// Revenue Calculator
+.revenue-calculator {
+  margin-top: 1.5rem;
+
+  .calculator-card {
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+
+    .calculator-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      color: #00d4ff;
+      font-weight: 600;
+    }
+
+    .calculator-content {
+      .revenue-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .label {
+          color: rgba(255, 255, 255, 0.8);
+        }
+
+        .value {
+          color: #00d4ff;
+          font-weight: 600;
+          font-size: 1.1rem;
+        }
+      }
+    }
+  }
+}
+
+// Scope Selection
+.scope-selection {
+  .full-width {
+    width: 100%;
+  }
+}
+
+// Image Upload
+.image-upload-section {
+  .image-preview-container {
+    margin-bottom: 1rem;
+
+    .image-preview {
+      position: relative;
+      display: inline-block;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+      img {
+        max-width: 300px;
+        max-height: 200px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .remove-image-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(244, 67, 54, 0.9);
+        color: white;
+
+        &:hover {
+          background: rgba(244, 67, 54, 1);
+        }
+      }
+    }
+  }
+
+  .upload-area {
+    text-align: center;
+    padding: 3rem 2rem;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #00d4ff;
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 1rem;
+    }
+
+    .upload-text {
+      color: white;
+      font-size: 1.1rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .upload-hint {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+  }
+}
+
+// Form Actions
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 2rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  button {
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 1rem;
+    min-width: 140px;
+
+    &.mat-raised-button {
+      background: linear-gradient(45deg, #00d4ff, #ff0095);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 6px 16px rgba(0, 212, 255, 0.4);
+        transform: translateY(-2px);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    &.mat-stroked-button {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+
+      &:hover:not(:disabled) {
+        border-color: #ff0095;
+        background: rgba(255, 0, 149, 0.1);
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
+}
+
+// Loading Spinner
+::ng-deep {
+  .mat-mdc-progress-spinner {
+    .mdc-circular-progress__color-1 .mdc-circular-progress__indeterminate-circle-graphic {
+      stroke: white;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .form-container {
+    padding: 0 0.5rem 2rem;
+
+    .raffle-form .form-section {
+      padding: 1.5rem;
+    }
+  }
+
+  .modern-dashboard .hero-section {
+    height: 250px;
+
+    .hero-content .hero-title {
+      font-size: 2.5rem;
+    }
+  }
+}

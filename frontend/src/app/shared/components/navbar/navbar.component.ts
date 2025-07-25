@@ -109,6 +109,81 @@ import { User } from '../../models/user.model';
         </div>
       </div>
     </nav>
+
+    <!-- Mobile Burger Menu -->
+    <div class="mobile-menu-overlay"
+         *ngIf="!isAuthRoute && isMobileMenuOpen"
+         (click)="toggleMobileMenu()">
+    </div>
+
+    <div class="mobile-menu"
+         *ngIf="!isAuthRoute"
+         [class.open]="isMobileMenuOpen">
+      <div class="mobile-menu-header">
+        <div class="mobile-logo">
+          <mat-icon>casino</mat-icon>
+          <span>RifApp</span>
+        </div>
+        <button mat-icon-button (click)="toggleMobileMenu()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="mobile-menu-content">
+        <nav class="mobile-nav">
+          <a mat-button
+             routerLink="/rifas"
+             routerLinkActive="active"
+             (click)="toggleMobileMenu()"
+             class="mobile-nav-item">
+            <mat-icon>explore</mat-icon>
+            <span>Explorar Rifas</span>
+            <mat-icon class="arrow">chevron_right</mat-icon>
+          </a>
+
+          <a mat-button
+             routerLink="/raffles/create"
+             routerLinkActive="active"
+             (click)="toggleMobileMenu()"
+             class="mobile-nav-item">
+            <mat-icon>add_circle_outline</mat-icon>
+            <span>Crear Rifa</span>
+            <mat-icon class="arrow">chevron_right</mat-icon>
+          </a>
+
+          <div class="mobile-nav-divider"></div>
+
+          <a mat-button
+             routerLink="/profile"
+             routerLinkActive="active"
+             (click)="toggleMobileMenu()"
+             class="mobile-nav-item"
+             *ngIf="currentUser">
+            <mat-icon>person</mat-icon>
+            <span>Mi Perfil</span>
+            <mat-icon class="arrow">chevron_right</mat-icon>
+          </a>
+
+          <a mat-button
+             routerLink="/mis-rifas"
+             routerLinkActive="active"
+             (click)="toggleMobileMenu()"
+             class="mobile-nav-item"
+             *ngIf="currentUser">
+            <mat-icon>confirmation_number</mat-icon>
+            <span>Mis Rifas</span>
+            <mat-icon class="arrow">chevron_right</mat-icon>
+          </a>
+        </nav>
+
+        <div class="mobile-menu-footer" *ngIf="currentUser">
+          <button mat-button (click)="logout()" class="logout-mobile-btn">
+            <mat-icon>logout</mat-icon>
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .modern-navbar {
@@ -486,6 +561,138 @@ import { User } from '../../models/user.model';
         font-size: 0.9rem !important;
       }
     }
+
+    /* Mobile Menu Styles */
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      backdrop-filter: blur(2px);
+    }
+
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      left: -100%;
+      width: 280px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+      z-index: 1002;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+
+    .mobile-menu.open {
+      left: 0;
+    }
+
+    .mobile-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .close-btn {
+      color: white !important;
+    }
+
+    .mobile-menu-content {
+      padding: 1rem 0;
+      height: calc(100vh - 80px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0 1rem;
+    }
+
+    .mobile-nav-item {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      padding: 1rem !important;
+      margin: 0 !important;
+      color: rgba(255, 255, 255, 0.8) !important;
+      background: transparent !important;
+      border-radius: 12px !important;
+      transition: all 0.3s ease !important;
+      font-weight: 500 !important;
+      text-decoration: none !important;
+      border: none !important;
+    }
+
+    .mobile-nav-item:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: white !important;
+      transform: translateX(8px) !important;
+    }
+
+    .mobile-nav-item.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+
+    .mobile-nav-item .arrow {
+      opacity: 0.6;
+      transition: transform 0.3s ease;
+    }
+
+    .mobile-nav-item:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    .mobile-nav-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 1rem 0;
+    }
+
+    .mobile-menu-footer {
+      padding: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logout-mobile-btn {
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      width: 100% !important;
+      padding: 1rem !important;
+      color: #ff6b6b !important;
+      background: rgba(255, 107, 107, 0.1) !important;
+      border-radius: 12px !important;
+      transition: all 0.3s ease !important;
+      font-weight: 500 !important;
+    }
+
+    .logout-mobile-btn:hover {
+      background: rgba(255, 107, 107, 0.2) !important;
+      transform: translateY(-2px) !important;
+    }
   `]
 })
 export class NavbarComponent implements OnInit {
@@ -495,6 +702,7 @@ export class NavbarComponent implements OnInit {
   searchQuery = '';
   isMobile = false;
   isAuthRoute = false;
+  isMobileMenuOpen = false;
 
   constructor(
     private authService: AuthService,
@@ -518,6 +726,11 @@ export class NavbarComponent implements OnInit {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
         this.checkAuthRoute();
+        // Close mobile menu when route changes
+        if (this.isMobileMenuOpen) {
+          this.isMobileMenuOpen = false;
+          document.body.style.overflow = 'auto';
+        }
       });
   }
 
@@ -544,8 +757,13 @@ export class NavbarComponent implements OnInit {
   }
 
   toggleMobileMenu() {
-    // Implement mobile menu toggle logic
-    console.log('Mobile menu toggled');
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    // Prevent body scroll when menu is open
+    if (this.isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
   }
 
   onSearch() {

@@ -1,0 +1,7 @@
+<!-- Este es un placeholder para imagen de rifa -->
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#e0e0e0"/>
+  <text x="200" y="150" text-anchor="middle" font-family="Arial" font-size="18" fill="#999">
+    Imagen de Rifa
+  </text>
+</svg>

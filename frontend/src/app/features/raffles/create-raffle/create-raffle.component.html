@@ -1,0 +1,294 @@
+<div class="modern-dashboard">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title">Crear Nueva Rifa</h1>
+      <p class="hero-subtitle">Crea tu propia rifa y comparte premios increíbles</p>
+    </div>
+  </div>
+
+  <!-- Form Section -->
+  <div class="form-container">
+    <form [formGroup]="raffleForm" (ngSubmit)="onSubmit()" class="raffle-form">
+
+      <!-- Basic Information Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <mat-icon>info</mat-icon>
+          </div>
+          <div class="section-title">
+            <h2>Información Básica</h2>
+            <p>Detalles principales de tu rifa</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <!-- Nombre de la rifa -->
+          <div class="full-width">
+            <label class="field-label">
+              Nombre de la Rifa
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="full-width">
+              <input matInput formControlName="name" placeholder="ej. iPhone 15 Pro - Sorteo Navideño">
+              <mat-icon matSuffix>title</mat-icon>
+              <mat-error *ngIf="isFieldInvalid('name')">
+                {{ getFieldError('name') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Descripción -->
+          <div class="full-width">
+            <label class="field-label">
+              Descripción
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="full-width">
+              <textarea matInput formControlName="description" rows="4"
+                       placeholder="Describe tu premio, condiciones especiales y cualquier información relevante..."></textarea>
+              <mat-icon matSuffix>description</mat-icon>
+              <mat-error *ngIf="isFieldInvalid('description')">
+                {{ getFieldError('description') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Términos y condiciones -->
+          <div class="full-width">
+            <label class="field-label">
+              Términos y Condiciones
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="full-width">
+              <textarea matInput formControlName="terms_conditions" rows="3"
+                       placeholder="Especifica las reglas, restricciones y condiciones de participación..."></textarea>
+              <mat-icon matSuffix>gavel</mat-icon>
+              <mat-error *ngIf="isFieldInvalid('terms_conditions')">
+                {{ getFieldError('terms_conditions') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <mat-icon>attach_money</mat-icon>
+          </div>
+          <div class="section-title">
+            <h2>Configuración de Boletos</h2>
+            <p>Precio y cantidad de boletos</p>
+          </div>
+        </div>
+
+        <div class="form-grid two-columns">
+          <!-- Precio del boleto -->
+          <div>
+            <label class="field-label">
+              Precio por Boleto
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline">
+              <input matInput type="number" formControlName="ticket_price" min="1" max="10000" placeholder="50">
+              <span matTextPrefix>$&nbsp;</span>
+              <mat-icon matSuffix>confirmation_number</mat-icon>
+              <mat-error *ngIf="isFieldInvalid('ticket_price')">
+                {{ getFieldError('ticket_price') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Total de boletos -->
+          <div>
+            <label class="field-label">
+              Cantidad Total de Boletos
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline">
+              <input matInput type="number" formControlName="total_tickets" min="1" max="10000" placeholder="100">
+              <mat-icon matSuffix>confirmation_number</mat-icon>
+              <mat-error *ngIf="isFieldInvalid('total_tickets')">
+                {{ getFieldError('total_tickets') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Revenue Calculator -->
+        <div class="revenue-calculator" *ngIf="raffleForm.get('ticket_price')?.value && raffleForm.get('total_tickets')?.value">
+          <div class="calculator-card">
+            <div class="calculator-header">
+              <mat-icon>calculate</mat-icon>
+              <span>Ingresos Potenciales</span>
+            </div>
+            <div class="calculator-content">
+              <div class="revenue-item">
+                <span class="label">Ingresos Totales:</span>
+                <span class="value">${{ (raffleForm.get('ticket_price')?.value * raffleForm.get('total_tickets')?.value) | number:'1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <mat-icon>event</mat-icon>
+          </div>
+          <div class="section-title">
+            <h2>Fechas del Sorteo</h2>
+            <p>Define cuándo inicia y termina tu rifa</p>
+          </div>
+        </div>
+
+        <div class="form-grid two-columns">
+          <!-- Fecha de inicio -->
+          <div>
+            <label class="field-label">
+              Fecha de Inicio
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline">
+              <input matInput [matDatepicker]="startPicker" formControlName="start_date" placeholder="Selecciona fecha">
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+              <mat-error *ngIf="isFieldInvalid('start_date')">
+                {{ getFieldError('start_date') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Fecha de fin -->
+          <div>
+            <label class="field-label">
+              Fecha de Fin
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline">
+              <input matInput [matDatepicker]="endPicker" formControlName="end_date" placeholder="Selecciona fecha">
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+              <mat-error *ngIf="isFieldInvalid('end_date')">
+                {{ getFieldError('end_date') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <mat-icon>place</mat-icon>
+          </div>
+          <div class="section-title">
+            <h2>Alcance Geográfico</h2>
+            <p>Define quién puede participar en tu rifa</p>
+          </div>
+        </div>
+
+        <div class="scope-selection">
+          <label class="field-label">
+            Alcance de la Rifa
+            <span class="required">*</span>
+          </label>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-select formControlName="scope" (selectionChange)="onScopeChange()" placeholder="Selecciona el alcance">
+              <mat-option *ngFor="let scope of scopes" [value]="scope.value">
+                <div class="scope-option">
+                  <mat-icon>{{ scope.icon }}</mat-icon>
+                  <span>{{ scope.label }}</span>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="isFieldInvalid('scope')">
+              {{ getFieldError('scope') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Image Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <mat-icon>image</mat-icon>
+          </div>
+          <div class="section-title">
+            <h2>Imagen del Premio</h2>
+            <p>Sube una imagen atractiva de tu premio</p>
+          </div>
+        </div>
+
+        <div class="image-upload-section">
+          <!-- Image Preview -->
+          <div class="image-preview-container" *ngIf="imagePreview">
+            <div class="image-preview">
+              <img [src]="imagePreview" alt="Preview">
+              <button type="button" mat-mini-fab color="warn" class="remove-image-btn" (click)="removeImage()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Area -->
+          <div class="upload-area" *ngIf="!imagePreview">
+            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+            <p class="upload-text">Arrastra una imagen aquí o haz clic para seleccionar</p>
+            <p class="upload-hint">PNG, JPG hasta 5MB</p>
+          </div>
+
+          <input type="file"
+                 id="imageInput"
+                 accept="image/*"
+                 (change)="onImageSelected($event)"
+                 style="display: none;">
+
+          <button type="button"
+                  mat-stroked-button
+                  color="primary"
+                  (click)="onSelectImage()">
+            <mat-icon>add_photo_alternate</mat-icon>
+            {{ imagePreview ? 'Cambiar Imagen' : 'Seleccionar Imagen' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button"
+                mat-stroked-button
+                color="warn"
+                (click)="onCancel()"
+                [disabled]="isLoading">
+          <mat-icon>cancel</mat-icon>
+          Cancelar
+        </button>
+
+        <button type="submit"
+                mat-raised-button
+                color="primary"
+                [disabled]="raffleForm.invalid || isLoading">
+          <mat-icon *ngIf="!isLoading">save</mat-icon>
+          <mat-spinner *ngIf="isLoading" diameter="20" color="accent"></mat-spinner>
+          {{ isLoading ? 'Creando...' : 'Crear Rifa' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
