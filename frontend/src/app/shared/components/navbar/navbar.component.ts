@@ -73,16 +73,6 @@ import { User } from '../../models/user.model';
               </button>
             </div>
 
-            <!-- Navigation menu for desktop -->
-            <div class="desktop-nav" *ngIf="!isMobile">
-              <button mat-button routerLink="/rifas" routerLinkActive="active">
-                Explorar
-              </button>
-              <button mat-button routerLink="/crear-rifa" routerLinkActive="active">
-                Crear Rifa
-              </button>
-            </div>
-
             <!-- Cart button -->
             <button mat-icon-button routerLink="/cart" class="cart-button"
                     [matBadge]="cartItemCount"
@@ -287,24 +277,6 @@ import { User } from '../../models/user.model';
       line-height: 1;
     }
 
-    .desktop-nav {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .desktop-nav button {
-      color: rgba(255, 255, 255, 0.8) !important;
-      font-weight: 500 !important;
-      border-radius: 8px !important;
-      transition: all 0.3s ease !important;
-    }
-
-    .desktop-nav button:hover,
-    .desktop-nav button.active {
-      color: white !important;
-      background: rgba(255, 255, 255, 0.1) !important;
-    }
-
     .cart-button {
       color: white !important;
       position: relative;
@@ -394,10 +366,6 @@ import { User } from '../../models/user.model';
         display: none;
       }
 
-      .desktop-nav {
-        display: none;
-      }
-
       .rifas-badge .badge-label {
         display: none;
       }
@@ -429,14 +397,23 @@ import { User } from '../../models/user.model';
     .auth-navbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       width: 100%;
+      position: relative;
     }
 
     .auth-logo-center {
-      flex: 1;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       justify-content: center;
+    }
+
+    .auth-buttons {
+      margin-left: auto;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
     }
 
     .logo-btn-auth {
@@ -456,12 +433,6 @@ import { User } from '../../models/user.model';
     .logo-btn-auth:hover {
       transform: translateY(-2px) !important;
       box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4) !important;
-    }
-
-    .auth-buttons {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
     }
 
     .auth-btn {
