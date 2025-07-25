@@ -83,4 +83,10 @@ export class DashboardComponent implements OnInit {
     };
     return titles[scope as keyof typeof titles] || 'Rifas';
   }
+
+  navigateToScope(scope: string): void {
+    this.router.navigate(['/raffles'], {
+      queryParams: { scope: scope }
+    });
+  }
 }

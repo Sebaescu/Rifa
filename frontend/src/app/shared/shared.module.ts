@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 // Angular Material
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -9,6 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 // Components
 import { NavbarComponent } from './components/navbar/navbar.component';
@@ -20,12 +23,15 @@ import { NavbarComponent } from './components/navbar/navbar.component';
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
     MatDividerModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatFormFieldModule,
+    MatInputModule
   ],
   exports: [
     NavbarComponent,
@@ -35,7 +41,10 @@ import { NavbarComponent } from './components/navbar/navbar.component';
     MatIconModule,
     MatMenuModule,
     MatDividerModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule
   ]
 })
 export class SharedModule { }

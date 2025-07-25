@@ -1,145 +1,593 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
+import { RaffleService } from '../../../core/services/raffle.service';
 import { User } from '../../models/user.model';
 
 @Component({
   selector: 'app-navbar',
   standalone: false,
   template: `
-    <mat-toolbar color="primary">
-      <mat-toolbar-row>
-        <button mat-icon-button (click)="toggleSidebar()" *ngIf="currentUser">
-          <mat-icon>menu</mat-icon>
-        </button>
-
-        <span class="logo" routerLink="/">
-          <mat-icon>casino</mat-icon>
-          RifApp
-        </span>
-
-        <span class="spacer"></span>
-
-        <div class="nav-links" *ngIf="!currentUser">
-          <button mat-button routerLink="/auth/login">Iniciar Sesión</button>
-          <button mat-raised-button color="accent" routerLink="/auth/register">Registrarse</button>
+    <nav class="modern-navbar">
+      <div class="navbar-container">
+        <!-- Navbar para rutas de auth (login/register) -->
+        <div *ngIf="isAuthRoute" class="auth-navbar">
+          <div class="auth-logo-center">
+            <button mat-button routerLink="/" class="logo-btn-auth">
+              <mat-icon>casino</mat-icon>
+              <span class="logo-text">RifApp</span>
+            </button>
+          </div>
+          <div class="auth-buttons">
+            <button mat-button routerLink="/auth/login" routerLinkActive="active" class="auth-btn">
+              Iniciar Sesión
+            </button>
+            <button mat-button routerLink="/auth/register" routerLinkActive="active" class="auth-btn register">
+              Registrarse
+            </button>
+          </div>
         </div>
 
-        <div class="user-actions" *ngIf="currentUser">
-          <!-- Carrito Button -->
-          <button mat-icon-button routerLink="/cart" class="cart-button" [matBadge]="cartItemCount"
-                  [matBadgeHidden]="cartItemCount === 0" matBadgeColor="accent">
-            <mat-icon>shopping_cart</mat-icon>
-          </button>
+        <!-- Navbar para rutas normales (dashboard, etc.) -->
+        <div *ngIf="!isAuthRoute" class="main-navbar">
+          <div class="navbar-left">
+            <!-- Mobile menu button -->
+            <button mat-icon-button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+              <mat-icon>menu</mat-icon>
+            </button>
 
-          <!-- User Menu -->
-          <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
-            <mat-icon>account_circle</mat-icon>
-            {{ currentUser.first_name }}
-            <mat-icon>arrow_drop_down</mat-icon>
-          </button>
+            <!-- Logo -->
+            <button mat-button routerLink="/" class="logo-btn">
+              <mat-icon>casino</mat-icon>
+              <span class="logo-text">RifApp</span>
+            </button>
+          </div>
 
-          <mat-menu #userMenu="matMenu">
-            <button mat-menu-item routerLink="/profile">
-              <mat-icon>person</mat-icon>
-              <span>Mi Perfil</span>
+          <div class="navbar-center">
+            <!-- Search bar -->
+            <div class="search-container">
+              <div class="search-wrapper">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input
+                  type="text"
+                  placeholder="Buscar rifas..."
+                  [(ngModel)]="searchQuery"
+                  (keyup.enter)="onSearch()"
+                  class="search-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="navbar-right">
+            <!-- Rifas Badge -->
+            <div class="rifas-badge-container">
+              <button mat-button class="rifas-badge" routerLink="/rifas">
+                <mat-icon>stars</mat-icon>
+                <div class="badge-content">
+                  <span class="badge-number">{{ activeRafflesCount }}</span>
+                  <span class="badge-label">Rifas Activas</span>
+                </div>
+              </button>
+            </div>
+
+            <!-- Navigation menu for desktop -->
+            <div class="desktop-nav" *ngIf="!isMobile">
+              <button mat-button routerLink="/rifas" routerLinkActive="active">
+                Explorar
+              </button>
+              <button mat-button routerLink="/crear-rifa" routerLinkActive="active">
+                Crear Rifa
+              </button>
+            </div>
+
+            <!-- Cart button -->
+            <button mat-icon-button routerLink="/cart" class="cart-button"
+                    [matBadge]="cartItemCount"
+                    [matBadgeHidden]="cartItemCount === 0" matBadgeColor="accent">
+              <mat-icon>shopping_cart</mat-icon>
             </button>
-            <button mat-menu-item routerLink="/my-tickets">
-              <mat-icon>confirmation_number</mat-icon>
-              <span>Mis Tickets</span>
-            </button>
-            <mat-divider></mat-divider>
-            <button mat-menu-item (click)="logout()">
-              <mat-icon>logout</mat-icon>
-              <span>Cerrar Sesión</span>
-            </button>
-          </mat-menu>
+
+            <!-- User menu -->
+            <div *ngIf="currentUser" class="user-menu-container">
+              <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-trigger">
+                <div class="user-info">
+                  <mat-icon>account_circle</mat-icon>
+                  <span class="user-name">{{ currentUser.first_name }}</span>
+                  <mat-icon class="dropdown-icon">keyboard_arrow_down</mat-icon>
+                </div>
+              </button>
+              <mat-menu #userMenu="matMenu" class="user-dropdown">
+                <button mat-menu-item routerLink="/profile">
+                  <mat-icon>person</mat-icon>
+                  <span>Mi Perfil</span>
+                </button>
+                <button mat-menu-item routerLink="/mis-rifas">
+                  <mat-icon>confirmation_number</mat-icon>
+                  <span>Mis Rifas</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="logout()" class="logout-btn">
+                  <mat-icon>logout</mat-icon>
+                  <span>Cerrar Sesión</span>
+                </button>
+              </mat-menu>
+            </div>
+          </div>
         </div>
-      </mat-toolbar-row>
-    </mat-toolbar>
+      </div>
+    </nav>
   `,
   styles: [`
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 20px;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .spacer {
-      flex: 1 1 auto;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .user-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .cart-button {
-      margin-right: 8px;
-    }
-
-    .user-menu-button {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    mat-toolbar {
+    .modern-navbar {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       position: sticky;
       top: 0;
       z-index: 1000;
+      height: 64px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      height: 100%;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .navbar-center-logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .mobile-menu-btn {
+      color: white !important;
+    }
+
+    .logo-btn {
+      color: white !important;
+      font-size: 1.2rem !important;
+      font-weight: 600 !important;
+      padding: 0.5rem 1rem !important;
+      border-radius: 12px !important;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+      transition: all 0.3s ease !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+    }
+
+    .logo-btn:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    .logo-text {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-weight: 700;
+    }
+
+    .navbar-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .search-container {
+      margin-right: 1rem;
+    }
+
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 25px;
+      padding: 0.5rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      min-width: 200px;
+    }
+
+    .search-wrapper:focus-within {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .search-icon {
+      color: rgba(255, 255, 255, 0.7);
+      margin-right: 0.5rem;
+    }
+
+    .search-input {
+      background: none;
+      border: none;
+      outline: none;
+      color: white;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .rifas-badge-container {
+      margin-right: 1rem;
+    }
+
+    .rifas-badge {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
+      color: white !important;
+      border-radius: 15px !important;
+      padding: 0.5rem 1rem !important;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
+      transition: all 0.3s ease !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    .rifas-badge::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .rifas-badge:hover::before {
+      left: 100%;
+    }
+
+    .rifas-badge:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4) !important;
+    }
+
+    .badge-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .badge-number {
+      font-size: 1.2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .badge-label {
+      font-size: 0.7rem;
+      opacity: 0.9;
+      line-height: 1;
+    }
+
+    .desktop-nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .desktop-nav button {
+      color: rgba(255, 255, 255, 0.8) !important;
+      font-weight: 500 !important;
+      border-radius: 8px !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .desktop-nav button:hover,
+    .desktop-nav button.active {
+      color: white !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .cart-button {
+      color: white !important;
+      position: relative;
+    }
+
+    .user-menu-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .user-menu-trigger {
+      color: white !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 10px !important;
+      padding: 0.5rem 1rem !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .user-menu-trigger:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-name {
+      font-weight: 500;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dropdown-icon {
+      font-size: 1rem !important;
+      transition: transform 0.3s ease;
+    }
+
+    .user-dropdown {
+      margin-top: 0.5rem;
+      border-radius: 10px !important;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .logout-btn {
+      color: #f44336 !important;
+    }
+
+    /* Auth buttons */
+    .auth-buttons {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .auth-btn {
+      color: white !important;
+      font-weight: 500 !important;
+      border-radius: 8px !important;
+      padding: 0.5rem 1.5rem !important;
+      transition: all 0.3s ease !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .auth-btn:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .auth-btn.register {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      border: none !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+
+    .auth-btn.register:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .navbar-center {
+        display: none;
+      }
+
+      .desktop-nav {
+        display: none;
+      }
+
+      .rifas-badge .badge-label {
+        display: none;
+      }
+
+      .user-name {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .navbar-container {
+        padding: 0 0.5rem;
+      }
+
+      .navbar-right {
+        gap: 0.5rem;
+      }
+
+      .rifas-badge {
+        padding: 0.25rem 0.5rem !important;
+      }
+
+      .badge-number {
+        font-size: 1rem;
+      }
+    }
+
+    /* Estilos para navbar de auth */
+    .auth-navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .auth-logo-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .logo-btn-auth {
+      color: white !important;
+      font-size: 1.2rem !important;
+      font-weight: 600 !important;
+      padding: 0.5rem 1rem !important;
+      border-radius: 12px !important;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+      transition: all 0.3s ease !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+    }
+
+    .logo-btn-auth:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .auth-btn {
+      color: white !important;
+      font-weight: 500 !important;
+      border-radius: 8px !important;
+      padding: 0.5rem 1.5rem !important;
+      transition: all 0.3s ease !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .auth-btn:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .auth-btn.register {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      border: none !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+
+    .auth-btn.register:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    /* Estilos para navbar principal */
+    .main-navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .navbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      max-width: 400px;
+      margin: 0 2rem;
+    }
+
+    /* Mobile responsiveness para auth */
+    @media (max-width: 768px) {
+      .auth-buttons {
+        gap: 0.5rem;
+      }
+
+      .auth-btn {
+        padding: 0.4rem 1rem !important;
+        font-size: 0.9rem !important;
+      }
     }
   `]
 })
 export class NavbarComponent implements OnInit {
   currentUser: User | null = null;
-  cartItemCount: number = 0;
+  cartItemCount = 0;
+  activeRafflesCount = 0;
+  searchQuery = '';
+  isMobile = false;
+  isAuthRoute = false;
 
   constructor(
     private authService: AuthService,
+    private router: Router,
     private cartService: CartService,
-    private router: Router
+    private raffleService: RaffleService
   ) {}
 
-  ngOnInit(): void {
-    this.authService.currentUser$.subscribe((user: User | null) => {
-      this.currentUser = user;
-    });
+  ngOnInit() {
+    this.checkMobile();
+    this.loadUserData();
+    this.loadCartCount();
+    this.loadActiveRafflesCount();
+    this.checkAuthRoute();
 
-    // Subscribirse al cart service para mostrar la cantidad de items
-    this.cartService.getCartItemCount().subscribe((count: number) => {
-      this.cartItemCount = count;
-    });
+    // Listen to window resize
+    window.addEventListener('resize', () => this.checkMobile());
+
+    // Listen to router events to detect auth routes
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.checkAuthRoute();
+      });
   }
 
-  toggleSidebar(): void {
-    // Implementar toggle del sidebar si se necesita
+  private checkMobile() {
+    this.isMobile = window.innerWidth <= 768;
   }
 
-  logout(): void {
-    this.authService.logout().subscribe({
-      next: () => {
-        this.router.navigate(['/auth/login']);
-      },
-      error: (error: any) => {
-        console.error('Error during logout:', error);
-        // Forzar logout local aunque falle el servidor
-        this.authService.forceLogout();
-        this.router.navigate(['/auth/login']);
-      }
+  private checkAuthRoute() {
+    this.isAuthRoute = this.router.url.startsWith('/auth');
+  }
+
+  private loadUserData() {
+    this.currentUser = this.authService.getCurrentUser();
+  }
+
+  private loadCartCount() {
+    // Mock data for now - replace with actual cart service call
+    this.cartItemCount = 3;
+  }
+
+  private loadActiveRafflesCount() {
+    // Mock data for now - replace with actual raffle service call
+    this.activeRafflesCount = 12;
+  }
+
+  toggleMobileMenu() {
+    // Implement mobile menu toggle logic
+    console.log('Mobile menu toggled');
+  }
+
+  onSearch() {
+    if (this.searchQuery.trim()) {
+      this.router.navigate(['/rifas'], {
+        queryParams: { search: this.searchQuery.trim() }
+      });
+    }
+  }
+
+  logout() {
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/auth/login']);
     });
   }
 }

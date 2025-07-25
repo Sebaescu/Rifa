@@ -1,19 +1,387 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { RaffleService } from '../../../core/services/raffle.service';
+import { Raffle } from '../../../shared/models/raffle.model';
 
 @Component({
   selector: 'app-raffle-list',
   standalone: false,
   template: `
     <div class="container">
-      <h1>Lista de Rifas</h1>
-      <p>Componente en desarrollo...</p>
+      <div class="header">
+        <h1>{{ getPageTitle() }}</h1>
+        <p class="subtitle" *ngIf="currentScope">
+          {{ getScopeDescription() }}
+        </p>
+        <p class="search-info" *ngIf="searchQuery">
+          Resultados para: "{{ searchQuery }}"
+        </p>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="loading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Cargando rifas...</p>
+      </div>
+
+      <!-- No Results -->
+      <div *ngIf="!isLoading && raffles.length === 0" class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <h3>No se encontraron rifas</h3>
+        <p>{{ getNoResultsMessage() }}</p>
+      </div>
+
+      <!-- Raffles Grid -->
+      <div *ngIf="!isLoading && raffles.length > 0" class="raffles-grid">
+        <mat-card class="raffle-card" *ngFor="let raffle of raffles" (click)="viewRaffleDetails(raffle.id)">
+          <div class="card-image" *ngIf="raffle.image">
+            <img [src]="raffle.image" [alt]="raffle.name">
+          </div>
+          <mat-card-header>
+            <mat-card-title>{{ raffle.name }}</mat-card-title>
+            <mat-card-subtitle>
+              <div class="distance" *ngIf="raffle.distance_km">
+                <mat-icon>location_on</mat-icon>
+                {{ formatDistance(raffle.distance_km) }}
+              </div>
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="description">{{ raffle.description | slice:0:100 }}...</p>
+            <div class="raffle-info">
+              <div class="price">
+                <span class="label">Precio:</span>
+                <span class="value">\${{ raffle.ticket_price }}</span>
+              </div>
+              <div class="tickets">
+                <span class="label">Disponibles:</span>
+                <span class="value">{{ raffle.tickets_available }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
     </div>
   `,
   styles: [`
     .container {
       padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
       text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      margin: 0 0 16px 0;
+      color: #1976d2;
+      font-size: 2.5rem;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 18px;
+      margin: 0 0 8px 0;
+    }
+
+    .search-info {
+      color: #1976d2;
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 80px;
+    }
+
+    .loading p {
+      margin-top: 16px;
+      color: #666;
+      font-size: 18px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 80px;
+      color: #666;
+    }
+
+    .no-results mat-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+
+    .no-results h3 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+    }
+
+    .raffles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .raffle-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+
+    .raffle-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      border-color: #1976d2;
+    }
+
+    .card-image {
+      height: 180px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .raffle-card:hover .card-image img {
+      transform: scale(1.05);
+    }
+
+    .raffle-card mat-card-header {
+      padding: 16px 16px 8px 16px;
+    }
+
+    .raffle-card mat-card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .distance {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .distance mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #ff5722;
+    }
+
+    .raffle-card mat-card-content {
+      padding: 8px 16px 16px 16px;
+    }
+
+    .description {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .raffle-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .raffle-info > div {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .price .value {
+      color: #4caf50;
+    }
+
+    .tickets .value {
+      color: #2196f3;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 16px;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .raffles-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
     }
   `]
 })
-export class RaffleListComponent {}
+export class RaffleListComponent implements OnInit {
+  raffles: Raffle[] = [];
+  isLoading = true;
+  searchQuery: string = '';
+  currentScope: string = '';
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private raffleService: RaffleService
+  ) {}
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      this.searchQuery = params['search'] || '';
+      this.currentScope = params['scope'] || '';
+      this.loadRaffles();
+    });
+  }
+
+  loadRaffles(): void {
+    this.isLoading = true;
+
+    if (this.searchQuery) {
+      this.searchRaffles();
+    } else if (this.currentScope) {
+      this.loadRafflesByScope();
+    } else {
+      this.loadAllRaffles();
+    }
+  }
+
+  private searchRaffles(): void {
+    // Implementar búsqueda de rifas
+    // Por ahora, cargar todas las rifas y filtrar localmente
+    this.raffleService.getRafflesNearUser().subscribe({
+      next: (response: {count: number, results: Raffle[]}) => {
+        this.raffles = response.results.filter(raffle =>
+          raffle.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          raffle.description.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        console.error('Error searching raffles:', error);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private loadRafflesByScope(): void {
+    this.raffleService.getRafflesNearUser().subscribe({
+      next: (response: {count: number, results: Raffle[]}) => {
+        this.raffles = response.results.filter(raffle =>
+          raffle.scope === this.currentScope && raffle.status === 'active'
+        );
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        console.error('Error loading raffles by scope:', error);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private loadAllRaffles(): void {
+    this.raffleService.getRafflesNearUser().subscribe({
+      next: (response: {count: number, results: Raffle[]}) => {
+        this.raffles = response.results.filter(raffle => raffle.status === 'active');
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        console.error('Error loading raffles:', error);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  getPageTitle(): string {
+    if (this.searchQuery) {
+      return 'Buscar Rifas';
+    }
+
+    if (this.currentScope) {
+      const titles = {
+        'local': 'Rifas en tu Ciudad',
+        'national': 'Rifas Nacionales',
+        'international': 'Rifas Internacionales'
+      };
+      return titles[this.currentScope as keyof typeof titles] || 'Rifas';
+    }
+
+    return 'Todas las Rifas';
+  }
+
+  getScopeDescription(): string {
+    const descriptions = {
+      'local': 'Rifas disponibles en tu área local',
+      'national': 'Rifas disponibles a nivel nacional',
+      'international': 'Rifas disponibles internacionalmente'
+    };
+    return descriptions[this.currentScope as keyof typeof descriptions] || '';
+  }
+
+  getNoResultsMessage(): string {
+    if (this.searchQuery) {
+      return `No se encontraron rifas que coincidan con "${this.searchQuery}". Intenta con otros términos de búsqueda.`;
+    }
+
+    if (this.currentScope) {
+      const messages = {
+        'local': 'No hay rifas disponibles en tu área local en este momento.',
+        'national': 'No hay rifas nacionales disponibles en este momento.',
+        'international': 'No hay rifas internacionales disponibles en este momento.'
+      };
+      return messages[this.currentScope as keyof typeof messages] || 'No hay rifas disponibles.';
+    }
+
+    return 'No hay rifas disponibles en este momento.';
+  }
+
+  viewRaffleDetails(raffleId: number): void {
+    this.router.navigate(['/raffles', raffleId]);
+  }
+
+  formatDistance(distance?: number): string {
+    if (!distance) return '';
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m`;
+    }
+    return `${distance.toFixed(1)}km`;
+  }
+}

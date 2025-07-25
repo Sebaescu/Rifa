@@ -1,216 +1,247 @@
-<div class="dashboard-container">
-  <!-- Header Section -->
-  <div class="header">
-    <h1>Explorar Rifas</h1>
-    <div class="location-info" *ngIf="userLocation">
-      <mat-icon>location_on</mat-icon>
-      <span>{{ userLocation.city }}, {{ userLocation.state }}, {{ userLocation.country }}</span>
+<div class="modern-dashboard">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
     </div>
-    <p>Descubre rifas emocionantes cerca de ti</p>
+    <div class="hero-content">
+      <h1 class="hero-title">Explorar Rifas</h1>
+      <div class="location-badge" *ngIf="userLocation">
+        <mat-icon>location_on</mat-icon>
+        <span>{{ userLocation.city }}, {{ userLocation.state }}, {{ userLocation.country }}</span>
+      </div>
+      <p class="hero-subtitle">Descubre rifas increíbles y gana premios extraordinarios</p>
+    </div>
   </div>
 
-  <!-- Stats Section -->
-  <div class="stats-section" *ngIf="totalActiveRaffles > 0">
-    <mat-card class="stat-card">
-      <mat-card-content>
-        <mat-icon class="stat-icon">casino</mat-icon>
-        <h3>Rifas Activas</h3>
-        <p class="stat-number">{{ totalActiveRaffles }}</p>
-      </mat-card-content>
-    </mat-card>
+  <!-- Navigation Cards Section -->
+  <div class="navigation-grid" *ngIf="!isLoading && totalActiveRaffles > 0">
+    <div class="nav-card local-card" (click)="navigateToScope('local')">
+      <div class="card-background">
+        <div class="card-content-centered">
+          <div class="card-icon">
+            <mat-icon>location_city</mat-icon>
+          </div>
+          <h3>En tu Ciudad</h3>
+          <p class="card-description">Rifas locales cerca de ti</p>
+          <div class="card-number">{{ localRaffles.length }}</div>
+        </div>
+        <div class="card-arrow">
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+    </div>
 
-    <mat-card class="stat-card">
-      <mat-card-content>
-        <mat-icon class="stat-icon">place</mat-icon>
-        <h3>En tu Ciudad</h3>
-        <p class="stat-number">{{ localRaffles.length }}</p>
-      </mat-card-content>
-    </mat-card>
+    <div class="nav-card national-card" (click)="navigateToScope('national')">
+      <div class="card-background">
+        <div class="card-content-centered">
+          <div class="card-icon">
+            <mat-icon>flag</mat-icon>
+          </div>
+          <h3>Nacionales</h3>
+          <p class="card-description">Rifas de todo el país</p>
+          <div class="card-number">{{ nationalRaffles.length }}</div>
+        </div>
+        <div class="card-arrow">
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+    </div>
 
-    <mat-card class="stat-card">
-      <mat-card-content>
-        <mat-icon class="stat-icon">public</mat-icon>
-        <h3>Nacionales</h3>
-        <p class="stat-number">{{ nationalRaffles.length }}</p>
-      </mat-card-content>
-    </mat-card>
+    <div class="nav-card international-card" (click)="navigateToScope('international')">
+      <div class="card-background">
+        <div class="card-content-centered">
+          <div class="card-icon">
+            <mat-icon>public</mat-icon>
+          </div>
+          <h3>Internacionales</h3>
+          <p class="card-description">Rifas de todo el mundo</p>
+          <div class="card-number">{{ internationalRaffles.length }}</div>
+        </div>
+        <div class="card-arrow">
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Cargando rifas cerca de ti...</p>
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="loading-animation">
+      <div class="loading-spinner">
+        <mat-spinner diameter="60"></mat-spinner>
+      </div>
+      <h3>Cargando rifas increíbles...</h3>
+      <p>Preparando las mejores oportunidades para ti</p>
+    </div>
   </div>
 
   <!-- No Raffles State -->
-  <div *ngIf="!isLoading && totalActiveRaffles === 0" class="no-raffles">
-    <mat-icon>casino</mat-icon>
-    <h3>No hay rifas disponibles en tu área</h3>
-    <p>¡Pronto habrán nuevas rifas disponibles!</p>
+  <div *ngIf="!isLoading && totalActiveRaffles === 0" class="empty-state">
+    <div class="empty-animation">
+      <mat-icon>sentiment_dissatisfied</mat-icon>
+    </div>
+    <h3>No hay rifas disponibles</h3>
+    <p>¡Pronto habrán nuevas rifas increíbles disponibles!</p>
+    <button mat-raised-button color="primary" (click)="loadRaffles()">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
   </div>
 
-  <!-- Raffles Sections -->
-  <div *ngIf="!isLoading && totalActiveRaffles > 0" class="raffles-sections">
+  <!-- Raffles Showcase -->
+  <div *ngIf="!isLoading && totalActiveRaffles > 0" class="raffles-showcase">
 
     <!-- Local Raffles -->
-    <div class="raffle-section" *ngIf="localRaffles.length > 0">
+    <section class="raffle-section local-section" *ngIf="localRaffles.length > 0">
       <div class="section-header">
-        <h2>{{ getScopeTitle('local') }}</h2>
-        <mat-chip-set>
-          <mat-chip>{{ localRaffles.length }} rifas</mat-chip>
-        </mat-chip-set>
-      </div>
-      <div class="raffles-grid">
-        <mat-card class="raffle-card" *ngFor="let raffle of localRaffles.slice(0, 4)"
-                  (click)="viewRaffleDetails(raffle.id)">
-          <div class="card-image" *ngIf="raffle.image">
-            <img [src]="raffle.image" [alt]="raffle.name">
+        <div class="header-content">
+          <div class="section-icon">
+            <mat-icon>location_city</mat-icon>
           </div>
-          <mat-card-header>
-            <mat-card-title>{{ raffle.name }}</mat-card-title>
-            <mat-card-subtitle>
-              <div class="distance" *ngIf="raffle.distance_km">
-                <mat-icon>location_on</mat-icon>
+          <div class="header-text">
+            <h2>{{ getScopeTitle('local') }}</h2>
+            <p>Rifas en tu área local</p>
+          </div>
+        </div>
+        <div class="section-badge">
+          <span class="badge-count">{{ localRaffles.length }}</span>
+          <span class="badge-label">rifas</span>
+        </div>
+      </div>
+      <div class="modern-raffles-grid">
+        <div class="modern-raffle-card" *ngFor="let raffle of localRaffles.slice(0, 4)"
+             (click)="viewRaffleDetails(raffle.id)">
+          <div class="card-image-container">
+            <img [src]="raffle.image || '/assets/default-raffle.jpg'" [alt]="raffle.name">
+            <div class="image-overlay">
+              <div class="distance-badge" *ngIf="raffle.distance_km">
+                <mat-icon>near_me</mat-icon>
                 {{ formatDistance(raffle.distance_km) }}
               </div>
-            </mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="description">{{ raffle.description | slice:0:100 }}...</p>
-            <div class="raffle-info">
-              <div class="price">
-                <span class="label">Precio:</span>
-                <span class="value">${{ raffle.ticket_price }}</span>
-              </div>
-              <div class="tickets">
-                <span class="label">Disponibles:</span>
-                <span class="value">{{ raffle.tickets_available }}</span>
-              </div>
             </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
-      <div class="view-more" *ngIf="localRaffles.length > 4">
-        <button mat-stroked-button>Ver más rifas locales</button>
-      </div>
-    </div>
-
-    <!-- State Raffles -->
-    <div class="raffle-section" *ngIf="stateRaffles.length > 0">
-      <div class="section-header">
-        <h2>{{ getScopeTitle('state') }}</h2>
-        <mat-chip-set>
-          <mat-chip>{{ stateRaffles.length }} rifas</mat-chip>
-        </mat-chip-set>
-      </div>
-      <div class="raffles-grid">
-        <mat-card class="raffle-card" *ngFor="let raffle of stateRaffles.slice(0, 4)"
-                  (click)="viewRaffleDetails(raffle.id)">
-          <div class="card-image" *ngIf="raffle.image">
-            <img [src]="raffle.image" [alt]="raffle.name">
           </div>
-          <mat-card-header>
-            <mat-card-title>{{ raffle.name }}</mat-card-title>
-            <mat-card-subtitle>
-              <div class="distance" *ngIf="raffle.distance_km">
-                <mat-icon>location_on</mat-icon>
-                {{ formatDistance(raffle.distance_km) }}
+          <div class="card-content">
+            <h3 class="card-title">{{ raffle.name }}</h3>
+            <p class="card-description">{{ raffle.description | slice:0:80 }}...</p>
+            <div class="card-footer">
+              <div class="price-info">
+                <span class="price-label">Precio</span>
+                <span class="price-value">${{ raffle.ticket_price }}</span>
               </div>
-            </mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="description">{{ raffle.description | slice:0:100 }}...</p>
-            <div class="raffle-info">
-              <div class="price">
-                <span class="label">Precio:</span>
-                <span class="value">${{ raffle.ticket_price }}</span>
-              </div>
-              <div class="tickets">
-                <span class="label">Disponibles:</span>
-                <span class="value">{{ raffle.tickets_available }}</span>
+              <div class="tickets-info">
+                <span class="tickets-label">Disponibles</span>
+                <span class="tickets-value">{{ raffle.tickets_available }}</span>
               </div>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       </div>
-      <div class="view-more" *ngIf="stateRaffles.length > 4">
-        <button mat-stroked-button>Ver más rifas provinciales</button>
+      <div class="view-more-section" *ngIf="localRaffles.length > 4">
+        <button mat-stroked-button class="view-more-btn" (click)="navigateToScope('local')">
+          Ver todas las rifas locales
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
       </div>
-    </div>
+    </section>
 
     <!-- National Raffles -->
-    <div class="raffle-section" *ngIf="nationalRaffles.length > 0">
+    <section class="raffle-section national-section" *ngIf="nationalRaffles.length > 0">
       <div class="section-header">
-        <h2>{{ getScopeTitle('national') }}</h2>
-        <mat-chip-set>
-          <mat-chip>{{ nationalRaffles.length }} rifas</mat-chip>
-        </mat-chip-set>
-      </div>
-      <div class="raffles-grid">
-        <mat-card class="raffle-card" *ngFor="let raffle of nationalRaffles.slice(0, 4)"
-                  (click)="viewRaffleDetails(raffle.id)">
-          <div class="card-image" *ngIf="raffle.image">
-            <img [src]="raffle.image" [alt]="raffle.name">
+        <div class="header-content">
+          <div class="section-icon">
+            <mat-icon>flag</mat-icon>
           </div>
-          <mat-card-header>
-            <mat-card-title>{{ raffle.name }}</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="description">{{ raffle.description | slice:0:100 }}...</p>
-            <div class="raffle-info">
-              <div class="price">
-                <span class="label">Precio:</span>
-                <span class="value">${{ raffle.ticket_price }}</span>
+          <div class="header-text">
+            <h2>{{ getScopeTitle('national') }}</h2>
+            <p>Rifas de todo el país</p>
+          </div>
+        </div>
+        <div class="section-badge">
+          <span class="badge-count">{{ nationalRaffles.length }}</span>
+          <span class="badge-label">rifas</span>
+        </div>
+      </div>
+      <div class="modern-raffles-grid">
+        <div class="modern-raffle-card" *ngFor="let raffle of nationalRaffles.slice(0, 4)"
+             (click)="viewRaffleDetails(raffle.id)">
+          <div class="card-image-container">
+            <img [src]="raffle.image || '/assets/default-raffle.jpg'" [alt]="raffle.name">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ raffle.name }}</h3>
+            <p class="card-description">{{ raffle.description | slice:0:80 }}...</p>
+            <div class="card-footer">
+              <div class="price-info">
+                <span class="price-label">Precio</span>
+                <span class="price-value">${{ raffle.ticket_price }}</span>
               </div>
-              <div class="tickets">
-                <span class="label">Disponibles:</span>
-                <span class="value">{{ raffle.tickets_available }}</span>
+              <div class="tickets-info">
+                <span class="tickets-label">Disponibles</span>
+                <span class="tickets-value">{{ raffle.tickets_available }}</span>
               </div>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       </div>
-      <div class="view-more" *ngIf="nationalRaffles.length > 4">
-        <button mat-stroked-button>Ver más rifas nacionales</button>
+      <div class="view-more-section" *ngIf="nationalRaffles.length > 4">
+        <button mat-stroked-button class="view-more-btn" (click)="navigateToScope('national')">
+          Ver todas las rifas nacionales
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
       </div>
-    </div>
+    </section>
 
     <!-- International Raffles -->
-    <div class="raffle-section" *ngIf="internationalRaffles.length > 0">
+    <section class="raffle-section international-section" *ngIf="internationalRaffles.length > 0">
       <div class="section-header">
-        <h2>{{ getScopeTitle('international') }}</h2>
-        <mat-chip-set>
-          <mat-chip>{{ internationalRaffles.length }} rifas</mat-chip>
-        </mat-chip-set>
-      </div>
-      <div class="raffles-grid">
-        <mat-card class="raffle-card" *ngFor="let raffle of internationalRaffles.slice(0, 4)"
-                  (click)="viewRaffleDetails(raffle.id)">
-          <div class="card-image" *ngIf="raffle.image">
-            <img [src]="raffle.image" [alt]="raffle.name">
+        <div class="header-content">
+          <div class="section-icon">
+            <mat-icon>public</mat-icon>
           </div>
-          <mat-card-header>
-            <mat-card-title>{{ raffle.name }}</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="description">{{ raffle.description | slice:0:100 }}...</p>
-            <div class="raffle-info">
-              <div class="price">
-                <span class="label">Precio:</span>
-                <span class="value">${{ raffle.ticket_price }}</span>
+          <div class="header-text">
+            <h2>{{ getScopeTitle('international') }}</h2>
+            <p>Rifas de todo el mundo</p>
+          </div>
+        </div>
+        <div class="section-badge">
+          <span class="badge-count">{{ internationalRaffles.length }}</span>
+          <span class="badge-label">rifas</span>
+        </div>
+      </div>
+      <div class="modern-raffles-grid">
+        <div class="modern-raffle-card" *ngFor="let raffle of internationalRaffles.slice(0, 4)"
+             (click)="viewRaffleDetails(raffle.id)">
+          <div class="card-image-container">
+            <img [src]="raffle.image || '/assets/default-raffle.jpg'" [alt]="raffle.name">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ raffle.name }}</h3>
+            <p class="card-description">{{ raffle.description | slice:0:80 }}...</p>
+            <div class="card-footer">
+              <div class="price-info">
+                <span class="price-label">Precio</span>
+                <span class="price-value">${{ raffle.ticket_price }}</span>
               </div>
-              <div class="tickets">
-                <span class="label">Disponibles:</span>
-                <span class="value">{{ raffle.tickets_available }}</span>
+              <div class="tickets-info">
+                <span class="tickets-label">Disponibles</span>
+                <span class="tickets-value">{{ raffle.tickets_available }}</span>
               </div>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       </div>
-      <div class="view-more" *ngIf="internationalRaffles.length > 4">
-        <button mat-stroked-button>Ver más rifas internacionales</button>
+      <div class="view-more-section" *ngIf="internationalRaffles.length > 4">
+        <button mat-stroked-button class="view-more-btn" (click)="navigateToScope('international')">
+          Ver todas las rifas internacionales
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
       </div>
-    </div>
+    </section>
 
   </div>
 </div>
