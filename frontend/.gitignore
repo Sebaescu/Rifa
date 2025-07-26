@@ -40,3 +40,13 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# API Keys and sensitive data
+**/environments/environment.ts
+**/environments/environment.prod.ts
