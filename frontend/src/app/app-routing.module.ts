@@ -24,6 +24,11 @@ const routes: Routes = [
     loadChildren: () => import('./features/raffles/raffles.module').then(m => m.RafflesModule)
   },
   {
+    path: 'gestionar-rifas',
+    loadChildren: () => import('./features/manage-raffles/manage-raffles.module').then(m => m.ManageRafflesModule),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'cart',
     loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule),
     canActivate: [AuthGuard]

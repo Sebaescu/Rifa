@@ -98,6 +98,10 @@ import { User } from '../../models/user.model';
                   <mat-icon>confirmation_number</mat-icon>
                   <span>Mis Rifas</span>
                 </button>
+                <button mat-menu-item routerLink="/gestionar-rifas">
+                  <mat-icon>settings</mat-icon>
+                  <span>Gestionar Rifas</span>
+                </button>
                 <mat-divider></mat-divider>
                 <button mat-menu-item (click)="logout()" class="logout-btn">
                   <mat-icon>logout</mat-icon>
@@ -172,6 +176,17 @@ import { User } from '../../models/user.model';
              *ngIf="currentUser">
             <mat-icon>confirmation_number</mat-icon>
             <span>Mis Rifas</span>
+            <mat-icon class="arrow">chevron_right</mat-icon>
+          </a>
+
+          <a mat-button
+             routerLink="/gestionar-rifas"
+             routerLinkActive="active"
+             (click)="toggleMobileMenu()"
+             class="mobile-nav-item"
+             *ngIf="currentUser">
+            <mat-icon>settings</mat-icon>
+            <span>Gestionar Rifas</span>
             <mat-icon class="arrow">chevron_right</mat-icon>
           </a>
         </nav>

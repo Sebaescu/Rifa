@@ -207,11 +207,16 @@
             <span class="required">*</span>
           </label>
           <mat-form-field appearance="outline" class="full-width">
-            <mat-select formControlName="scope" (selectionChange)="onScopeChange()" placeholder="Selecciona el alcance">
+            <mat-select formControlName="scope" placeholder="Selecciona el alcance" (selectionChange)="onScopeChange($event.value)">
               <mat-option *ngFor="let scope of scopes" [value]="scope.value">
                 <div class="scope-option">
-                  <mat-icon>{{ scope.icon }}</mat-icon>
-                  <span>{{ scope.label }}</span>
+                  <div class="scope-info">
+                    <mat-icon>{{ scope.icon }}</mat-icon>
+                    <div>
+                      <span class="scope-title">{{ scope.label }}</span>
+                      <small class="scope-description">{{ scope.description }}</small>
+                    </div>
+                  </div>
                 </div>
               </mat-option>
             </mat-select>
@@ -219,6 +224,65 @@
               {{ getFieldError('scope') }}
             </mat-error>
           </mat-form-field>
+        </div>
+
+        <!-- Selectores de ubicación -->
+        <div class="location-selectors">
+
+          <!-- Selector de país (siempre visible) -->
+          <div class="location-field">
+            <label class="field-label">
+              País
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-select formControlName="selectedCountry" placeholder="Selecciona un país">
+                <mat-option *ngFor="let country of availableCountries" [value]="country.id">
+                  {{ country.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="isFieldInvalid('selectedCountry')">
+                {{ getFieldError('selectedCountry') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Selector de provincias/estados (solo para scope provincial) -->
+          <div *ngIf="raffleForm.get('scope')?.value === 'provincial' && availableStates.length > 0" class="location-field">
+            <label class="field-label">
+              Provincias/Estados
+              <span class="required">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-select formControlName="selectedStates"
+                         [multiple]="true"
+                         placeholder="Selecciona provincias/estados">
+                <mat-option *ngFor="let state of availableStates" [value]="state.id">
+                  {{ state.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="isFieldInvalid('selectedStates')">
+                {{ getFieldError('selectedStates') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Información de ayuda según el scope -->
+          <div class="scope-help-info">
+            <div *ngIf="raffleForm.get('scope')?.value === 'provincial'" class="help-text">
+              <mat-icon>info</mat-icon>
+              <span>Selecciona las provincias/estados específicos donde estará disponible tu rifa. Si seleccionas "Todas las provincias", la rifa estará disponible en todo el país.</span>
+            </div>
+            <div *ngIf="raffleForm.get('scope')?.value === 'national'" class="help-text">
+              <mat-icon>info</mat-icon>
+              <span>La rifa estará disponible en todo el país seleccionado.</span>
+            </div>
+            <div *ngIf="raffleForm.get('scope')?.value === 'international'" class="help-text">
+              <mat-icon>info</mat-icon>
+              <span>La rifa estará disponible en todo el mundo. Si seleccionas "Todos los países", será completamente internacional.</span>
+            </div>
+          </div>
+
         </div>
       </div>
 

@@ -224,19 +224,7 @@
           }
         }
 
-        .mat-mdc-option {
-          .scope-option {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-
-            mat-icon {
-              font-size: 18px;
-              width: 18px;
-              height: 18px;
-            }
-          }
-        }
+        // Opciones de select personalizadas - estilos movidos a .scope-selection
       }
 
       // Custom field labels - externos y encima de los campos
@@ -300,6 +288,81 @@
 .scope-selection {
   .full-width {
     width: 100%;
+  }
+
+  .scope-option {
+    .scope-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+
+      mat-icon {
+        color: #00d4ff;
+        font-size: 20px;
+        min-width: 20px;
+      }
+
+      .scope-title {
+        font-weight: 500;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .scope-description {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+        display: block;
+        line-height: 1.2;
+      }
+    }
+  }
+}
+
+// Location Selectors
+.location-selectors {
+  margin-top: 1.5rem;
+
+  .location-field {
+    margin-bottom: 1.5rem;
+
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #ffffff;
+      font-size: 0.9rem;
+
+      .required {
+        color: #ff6b6b;
+        margin-left: 4px;
+      }
+    }
+  }
+
+  .scope-help-info {
+    margin-top: 1rem;
+
+    .help-text {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.85rem;
+      line-height: 1.4;
+
+      mat-icon {
+        color: #00d4ff;
+        font-size: 18px;
+        margin-top: 1px;
+        min-width: 18px;
+      }
+    }
   }
 }
 
