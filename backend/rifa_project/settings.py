@@ -94,9 +94,9 @@ WSGI_APPLICATION = 'rifa_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'rifa_system'),
-        'USER': os.getenv('DB_USER', 'rifa_user'), 
-        'PASSWORD': os.getenv('DB_PASSWORD', 'rifa_password123'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'), 
+        'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
@@ -180,19 +180,14 @@ ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
 ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300  # 5 minutes timeout
 
 # Email Configuration
-# Para desarrollo - emails en consola
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# Para envío real de emails - configurar con tus credenciales de Gmail
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'sebaescuec@gmail.com'  # Tu email de Gmail
-EMAIL_HOST_PASSWORD = 'srej feab aiid tiyk'  # Genera una App Password en Gmail: https://support.google.com/accounts/answer/185833
-
-DEFAULT_FROM_EMAIL = 'sebaescuec@gmail.com'
-SERVER_EMAIL = 'sebaescuec@gmail.com'
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', EMAIL_HOST_USER)
 
 # Frontend URL for password reset links
 FRONTEND_URL = 'http://localhost:4200'
