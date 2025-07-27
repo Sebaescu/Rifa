@@ -121,9 +121,8 @@
         </div>
       </div>
       <div class="modern-raffles-grid">
-        <div class="modern-raffle-card" *ngFor="let raffle of stateRaffles.slice(0, 4)"
-             (click)="viewRaffleDetails(raffle.id)">
-          <div class="card-image-container">
+        <div class="modern-raffle-card" *ngFor="let raffle of stateRaffles.slice(0, 4)">
+          <div class="card-image-container" (click)="viewRaffleDetails(raffle.id)">
             <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
             <div class="image-overlay">
               <div class="distance-badge" *ngIf="raffle.distance_km">
@@ -132,7 +131,7 @@
               </div>
             </div>
           </div>
-          <div class="card-content">
+          <div class="card-content" (click)="viewRaffleDetails(raffle.id)">
             <h3 class="card-title">{{ raffle.name }}</h3>
             <p class="card-description">{{ raffle.description | slice:0:80 }}...</p>
             <div class="card-footer">
@@ -145,6 +144,16 @@
                 <span class="tickets-value">{{ raffle.tickets_available }}</span>
               </div>
             </div>
+          </div>
+          <div class="card-actions">
+            <button mat-fab
+                    color="primary"
+                    class="add-to-cart-btn"
+                    (click)="addToCart(raffle, $event)"
+                    [disabled]="raffle.tickets_available <= 0"
+                    matTooltip="Añadir al carrito">
+              <mat-icon>add_shopping_cart</mat-icon>
+            </button>
           </div>
         </div>
       </div>
@@ -178,6 +187,13 @@
              (click)="viewRaffleDetails(raffle.id)">
           <div class="card-image-container">
             <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
+            <button mat-fab
+                    class="add-to-cart-btn"
+                    (click)="addToCart(raffle, $event)"
+                    [disabled]="raffle.tickets_available === 0"
+                    [title]="raffle.tickets_available === 0 ? 'Sin boletos disponibles' : 'Añadir al carrito'">
+              <mat-icon>add_shopping_cart</mat-icon>
+            </button>
           </div>
           <div class="card-content">
             <h3 class="card-title">{{ raffle.name }}</h3>
@@ -225,6 +241,13 @@
              (click)="viewRaffleDetails(raffle.id)">
           <div class="card-image-container">
             <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
+            <button mat-fab
+                    class="add-to-cart-btn"
+                    (click)="addToCart(raffle, $event)"
+                    [disabled]="raffle.tickets_available === 0"
+                    [title]="raffle.tickets_available === 0 ? 'Sin boletos disponibles' : 'Añadir al carrito'">
+              <mat-icon>add_shopping_cart</mat-icon>
+            </button>
           </div>
           <div class="card-content">
             <h3 class="card-title">{{ raffle.name }}</h3>

@@ -19,6 +19,27 @@ class TicketSerializer(serializers.ModelSerializer):
                  'reserved_until', 'created_at']
         read_only_fields = ['id', 'purchased_by', 'purchase_date', 'created_at']
 
+class TicketWithRaffleSerializer(serializers.ModelSerializer):
+    raffle = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Ticket
+        fields = ['id', 'number', 'status', 'purchased_by', 'purchase_date', 
+                 'reserved_until', 'created_at', 'raffle']
+        read_only_fields = ['id', 'purchased_by', 'purchase_date', 'created_at']
+    
+    def get_raffle(self, obj):
+        # Crear un serializer de rifa simplificado para evitar recursión
+        return {
+            'id': obj.raffle.id,
+            'name': obj.raffle.name,
+            'description': obj.raffle.description,
+            'ticket_price': obj.raffle.ticket_price,
+            'image': obj.raffle.image.url if obj.raffle.image else None,
+            'scope': obj.raffle.scope,
+            'tickets_available': obj.raffle.tickets_available,
+        }
+
 class RaffleSerializer(serializers.ModelSerializer):
     created_by = CustomUserSerializer(read_only=True)
     tickets_available = serializers.SerializerMethodField()
@@ -163,7 +184,7 @@ class RaffleDetailSerializer(serializers.ModelSerializer):
         return obj.tickets.filter(status='sold').count()
 
 class CartItemSerializer(serializers.ModelSerializer):
-    ticket = TicketSerializer(read_only=True)
+    ticket = TicketWithRaffleSerializer(read_only=True)
     ticket_id = serializers.IntegerField(write_only=True)
     
     class Meta:

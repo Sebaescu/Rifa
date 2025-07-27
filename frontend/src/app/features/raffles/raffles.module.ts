@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 // Angular Material
 import { MatCardModule } from '@angular/material/card';
@@ -19,21 +19,25 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 // Components
 import { RaffleListComponent } from './raffle-list/raffle-list.component';
 import { CreateRaffleComponent } from './create-raffle/create-raffle.component';
+import { TicketSelectionComponent } from './ticket-selection/ticket-selection.component';
 
 const routes: Routes = [
   { path: '', component: RaffleListComponent },
   { path: 'create', component: CreateRaffleComponent },
+  { path: ':id/tickets', component: TicketSelectionComponent },
   { path: ':id', component: RaffleListComponent } // Temporary, will create detail component later
 ];
 
 @NgModule({
   declarations: [
     RaffleListComponent,
-    CreateRaffleComponent
+    CreateRaffleComponent,
+    TicketSelectionComponent
   ],
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     RouterModule.forChild(routes),
     MatCardModule,
     MatButtonModule,

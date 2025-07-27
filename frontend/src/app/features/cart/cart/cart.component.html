@@ -1,0 +1,153 @@
+<div class="cart-container">
+  <!-- Header del carrito -->
+  <div class="cart-header">
+    <div class="header-content">
+      <h1 class="cart-title">
+        <mat-icon>shopping_cart</mat-icon>
+        Carrito de Compras
+      </h1>
+      <p class="cart-subtitle" *ngIf="cart && cart.items.length > 0">
+        {{ cart.items.length }} {{ cart.items.length === 1 ? 'boleto' : 'boletos' }} en tu carrito
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando carrito...</p>
+  </div>
+
+  <!-- Empty Cart -->
+  <div class="empty-cart" *ngIf="!isLoading && (!cart || cart.items.length === 0)">
+    <div class="empty-cart-content">
+      <mat-icon class="empty-icon">shopping_cart</mat-icon>
+      <h2>Tu carrito está vacío</h2>
+      <p>¡Explora nuestras rifas y encuentra tu próximo premio!</p>
+      <button mat-raised-button color="primary" (click)="continueShopping()">
+        <mat-icon>explore</mat-icon>
+        Explorar Rifas
+      </button>
+    </div>
+  </div>
+
+  <!-- Cart Content -->
+  <div class="cart-content" *ngIf="!isLoading && cart && cart.items.length > 0">
+
+    <!-- Cart Items -->
+    <div class="cart-items">
+      <mat-card class="cart-item" *ngFor="let item of cart.items; trackBy: trackByItemId">
+        <div class="item-content">
+
+          <!-- Item Image -->
+          <div class="item-image" (click)="viewRaffleDetails(item.ticket.raffle?.id || 0)">
+            <img [src]="getImageUrl(item.ticket.raffle?.image)"
+                 [alt]="item.ticket.raffle?.name || 'Raffle'"
+                 onerror="this.src='/assets/images/default-raffle.jpg'">
+          </div>
+
+          <!-- Item Details -->
+          <div class="item-details">
+            <h3 class="item-title" (click)="viewRaffleDetails(item.ticket.raffle?.id || 0)">
+              {{ item.ticket.raffle?.name || 'Raffle name not available' }}
+            </h3>
+            <p class="item-description">{{ (item.ticket.raffle?.description || 'No description') | slice:0:100 }}...</p>            <div class="item-info">
+              <div class="ticket-info">
+                <span class="ticket-label">Boleto #</span>
+                <span class="ticket-number">{{ item.ticket.number }}</span>
+              </div>
+              <div class="scope-info">
+                <mat-icon class="scope-icon">{{ getScopeIcon(item.ticket.raffle?.scope || 'national') }}</mat-icon>
+                <span class="scope-text">{{ getScopeText(item.ticket.raffle?.scope || 'national') }}</span>
+              </div>
+            </div>
+
+            <div class="item-meta">
+              <span class="added-date">
+                <mat-icon>schedule</mat-icon>
+                Agregado {{ getTimeAgo(item.added_at) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Item Price & Actions -->
+          <div class="item-actions">
+            <div class="price-section">
+              <span class="price-label">Precio</span>
+              <span class="price-value">${{ item.ticket.raffle?.ticket_price || 0 }}</span>
+            </div>
+
+            <div class="action-buttons">
+              <button mat-icon-button
+                      color="warn"
+                      (click)="removeItem(item)"
+                      [disabled]="isProcessing"
+                      matTooltip="Remover del carrito">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Cart Summary -->
+    <div class="cart-summary">
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Resumen del Pedido</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="summary-line">
+            <span class="summary-label">Subtotal ({{ cart.items.length }} boletos)</span>
+            <span class="summary-value">${{ cart.total_amount }}</span>
+          </div>
+
+          <div class="summary-line">
+            <span class="summary-label">Procesamiento</span>
+            <span class="summary-value">Gratis</span>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="summary-line total-line">
+            <span class="summary-label">Total</span>
+            <span class="summary-value">${{ cart.total_amount }}</span>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions class="summary-actions">
+          <button mat-stroked-button
+                  class="continue-shopping-btn"
+                  (click)="continueShopping()">
+            <mat-icon>arrow_back</mat-icon>
+            Seguir Comprando
+          </button>
+
+          <button mat-raised-button
+                  color="primary"
+                  class="checkout-btn"
+                  (click)="proceedToCheckout()"
+                  [disabled]="isProcessing">
+            <mat-icon>payment</mat-icon>
+            Proceder al Pago
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Clear Cart Option -->
+    <div class="cart-footer">
+      <button mat-button
+              color="warn"
+              (click)="clearCart()"
+              [disabled]="isProcessing">
+        <mat-icon>clear_all</mat-icon>
+        Vaciar Carrito
+      </button>
+    </div>
+  </div>
+</div>

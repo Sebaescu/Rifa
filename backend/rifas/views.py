@@ -311,6 +311,111 @@ def add_to_cart(request):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_raffle_to_cart(request):
+    """Add first available ticket from a raffle to cart"""
+    raffle_id = request.data.get('raffle_id')
+    if not raffle_id:
+        return Response({
+            'error': 'raffle_id is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    raffle = get_object_or_404(Raffle, id=raffle_id)
+    
+    # Find first available ticket for this raffle
+    available_ticket = Ticket.objects.filter(
+        raffle=raffle, 
+        status='available'
+    ).first()
+    
+    if not available_ticket:
+        return Response({
+            'error': 'No tickets available for this raffle'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get or create cart
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    
+    # Check if user already has a ticket from this raffle in cart
+    existing_item = CartItem.objects.filter(
+        cart=cart, 
+        ticket__raffle=raffle
+    ).first()
+    
+    if existing_item:
+        return Response({
+            'error': 'You already have a ticket from this raffle in your cart'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Reserve ticket and add to cart
+    with transaction.atomic():
+        available_ticket.reserve_for_user(request.user, minutes=10)
+        CartItem.objects.create(cart=cart, ticket=available_ticket)
+    
+    return Response({
+        'message': f'Ticket #{available_ticket.number} from "{raffle.name}" added to cart',
+        'ticket_number': available_ticket.number
+    }, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_tickets_to_cart(request):
+    """Add multiple specific tickets to cart"""
+    ticket_ids = request.data.get('ticket_ids', [])
+    
+    if not ticket_ids or not isinstance(ticket_ids, list):
+        return Response({
+            'error': 'ticket_ids must be a non-empty list'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get or create cart
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    
+    added_tickets = []
+    errors = []
+    
+    with transaction.atomic():
+        for ticket_id in ticket_ids:
+            try:
+                ticket = Ticket.objects.get(id=ticket_id, status='available')
+                
+                # Check if ticket is already in cart
+                existing_item = CartItem.objects.filter(
+                    cart=cart, 
+                    ticket=ticket
+                ).first()
+                
+                if existing_item:
+                    errors.append(f'Ticket #{ticket.number} is already in your cart')
+                    continue
+                
+                # Reserve ticket and add to cart
+                ticket.reserve_for_user(request.user, minutes=10)
+                CartItem.objects.create(cart=cart, ticket=ticket)
+                added_tickets.append({
+                    'ticket_id': ticket.id,
+                    'ticket_number': ticket.number,
+                    'raffle_name': ticket.raffle.name
+                })
+                
+            except Ticket.DoesNotExist:
+                errors.append(f'Ticket with ID {ticket_id} is not available')
+    
+    if added_tickets:
+        response_data = {
+            'message': f'{len(added_tickets)} ticket(s) added to cart',
+            'added_tickets': added_tickets
+        }
+        if errors:
+            response_data['warnings'] = errors
+        return Response(response_data, status=status.HTTP_201_CREATED)
+    else:
+        return Response({
+            'error': 'No tickets could be added to cart',
+            'details': errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['DELETE'])
 @permission_classes([permissions.IsAuthenticated])
 def remove_from_cart(request, ticket_id):

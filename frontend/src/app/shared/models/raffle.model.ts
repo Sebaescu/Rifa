@@ -44,6 +44,15 @@ export interface Ticket {
   purchase_date?: string;
   reserved_until?: string;
   created_at: string;
+  raffle?: {
+    id: number;
+    name: string;
+    description: string;
+    ticket_price: number;
+    image?: string;
+    scope: string;
+    tickets_available: number;
+  };
 }
 
 export interface RaffleDetail extends Raffle {

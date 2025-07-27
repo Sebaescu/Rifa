@@ -743,6 +743,9 @@ export class NavbarComponent implements OnInit {
       // Cargar estadísticas cuando el usuario cambia
       if (user) {
         this.loadActiveRafflesCount();
+        this.loadCartCount(); // Recargar contador del carrito
+      } else {
+        this.cartItemCount = 0; // Resetear contador si no hay usuario
       }
     });
 
@@ -781,8 +784,10 @@ export class NavbarComponent implements OnInit {
   }
 
   private loadCartCount() {
-    // Mock data for now - replace with actual cart service call
-    this.cartItemCount = 3;
+    // Suscribirse al contador de items del carrito
+    this.cartService.getItemCount().subscribe((count: number) => {
+      this.cartItemCount = count;
+    });
   }
 
   private loadActiveRafflesCount() {

@@ -28,6 +28,20 @@ export class CartService {
       );
   }
 
+  addRaffleToCart(raffleId: number): Observable<any> {
+    return this.http.post(`${this.API_URL}/cart/add-raffle/`, { raffle_id: raffleId })
+      .pipe(
+        tap(() => this.refreshCart())
+      );
+  }
+
+  addTicketsToCart(ticketIds: number[]): Observable<any> {
+    return this.http.post(`${this.API_URL}/cart/add-tickets/`, { ticket_ids: ticketIds })
+      .pipe(
+        tap(() => this.refreshCart())
+      );
+  }
+
   removeFromCart(ticketId: number): Observable<any> {
     return this.http.delete(`${this.API_URL}/cart/remove/${ticketId}/`)
       .pipe(
@@ -61,17 +75,16 @@ export class CartService {
     return this.http.get<UserTickets[]>(`${this.API_URL}/my-tickets/`);
   }
 
+  getItemCount(): Observable<number> {
+    return this.cart$.pipe(
+      map(cart => {
+        if (!cart || !cart.items) return 0;
+        return cart.items.length;
+      })
+    );
+  }
+
   private refreshCart(): void {
     this.getCart().subscribe();
-  }
-
-  getCurrentCart(): Cart | null {
-    return this.cartSubject.value;
-  }
-
-  getCartItemCount(): Observable<number> {
-    return this.cart$.pipe(
-      map(cart => cart ? cart.items.length : 0)
-    );
   }
 }

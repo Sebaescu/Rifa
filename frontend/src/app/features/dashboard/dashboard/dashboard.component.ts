@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { StatisticsService } from '../../../core/services/statistics.service';
+import { CartService } from '../../../core/services/cart.service';
 import { Raffle, UserLocation } from '../../../shared/models/raffle.model';
 import { EXAMPLE_RAFFLE_IMAGES } from '../../../../assets/images/raffles/examples/raffle-images.constants';
 
@@ -26,7 +28,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private raffleService: RaffleService,
     private statisticsService: StatisticsService,
-    private router: Router
+    private cartService: CartService,
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -305,5 +309,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.isRefreshingLocation = false;
     }, 2000);
+  }
+
+  addToCart(raffle: Raffle, event: Event): void {
+    // Prevenir que el click propague al card y abra los detalles
+    event.stopPropagation();
+
+    // Verificar que la rifa tenga boletos disponibles
+    if (raffle.tickets_available === 0) {
+      this.showMessage('No hay boletos disponibles para esta rifa');
+      return;
+    }
+
+    console.log('Navegando a selección de tickets para:', raffle.name, 'ID:', raffle.id);
+
+    // Navegar a la página de selección de tickets
+    this.router.navigate(['/raffles', raffle.id, 'tickets']);
+  }
+
+  private showMessage(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
   }
 }

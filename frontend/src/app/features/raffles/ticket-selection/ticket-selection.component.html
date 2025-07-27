@@ -1,0 +1,150 @@
+<div class="ticket-selection-container">
+  <!-- Header con información de la rifa -->
+  <div class="header" *ngIf="raffle">
+    <button mat-icon-button (click)="goBack()" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="raffle-info">
+      <h1>{{ raffle.name }}</h1>
+      <p class="raffle-description">{{ raffle.description }}</p>
+
+      <!-- Información adicional de fechas -->
+      <div class="raffle-dates" *ngIf="raffle.end_date">
+        <div class="date-info">
+          <mat-icon class="date-icon">event</mat-icon>
+          <span class="date-label">Sorteo:</span>
+          <span class="date-value">{{ formatDate(raffle.end_date) }}</span>
+        </div>
+        <div class="date-info" *ngIf="raffle.start_date">
+          <mat-icon class="date-icon">play_circle</mat-icon>
+          <span class="date-label">Inicio:</span>
+          <span class="date-value">{{ formatDate(raffle.start_date) }}</span>
+        </div>
+        <div class="date-info" *ngIf="getRemainingDays() !== null">
+          <mat-icon class="date-icon">schedule</mat-icon>
+          <span class="date-label">Tiempo restante:</span>
+          <span class="date-value">{{ getRemainingDays() }} días</span>
+        </div>
+      </div>
+
+      <div class="price-info">
+        <span class="ticket-price">Precio por ticket: <strong>${{ raffle.ticket_price | number:'1.0-0' }}</strong></span>
+        <span class="tickets-available">Tickets disponibles: <strong>{{ raffle.tickets_available }}</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado de carga -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Cargando tickets disponibles...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="goBack()">Volver al Dashboard</button>
+  </div>
+
+  <!-- Grid de tickets -->
+  <div *ngIf="!loading && !error && tickets.length > 0" class="tickets-section">
+    <div class="tickets-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h2>Selecciona tus tickets</h2>
+          <p class="instructions">Haz clic en los números que deseas para seleccionarlos</p>
+        </div>
+        <div class="filter-section">
+          <div class="filter-wrapper">
+            <mat-icon class="filter-icon">filter_list</mat-icon>
+            <input
+              type="text"
+              placeholder="Filtrar desde ticket #..."
+              [(ngModel)]="ticketFilter"
+              (ngModelChange)="onFilterChange($event)"
+              class="filter-input"
+              [disabled]="loading">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tickets-grid">
+      <div
+        *ngFor="let ticket of getFilteredTickets()"
+        class="ticket-item"
+        [class]="getTicketStatusClass(ticket)"
+        [class.selected]="isTicketSelected(ticket.id)"
+        (click)="isTicketAvailable(ticket) ? toggleTicketSelection(ticket.id) : null"
+        [attr.title]="getTicketTooltip(ticket)">
+
+        <span class="ticket-number">{{ ticket.number }}</span>
+
+        <div class="ticket-status" *ngIf="!isTicketAvailable(ticket)">
+          <mat-icon *ngIf="ticket.status === 'sold'">check_circle</mat-icon>
+          <mat-icon *ngIf="ticket.status === 'reserved'">schedule</mat-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de selección -->
+    <div class="selection-panel" *ngIf="getSelectedTicketsCount() > 0">
+      <div class="selection-summary">
+        <h3>Resumen de selección</h3>
+        <div class="summary-details">
+          <p><strong>{{ getSelectedTicketsCount() }}</strong> ticket{{ getSelectedTicketsCount() > 1 ? 's' : '' }} seleccionado{{ getSelectedTicketsCount() > 1 ? 's' : '' }}</p>
+          <p class="total-price">Total: <strong>${{ getTotalPrice() | number:'1.0-0' }}</strong></p>
+        </div>
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" (click)="addSelectedTicketsToCart()" [disabled]="getSelectedTicketsCount() === 0">
+            <mat-icon>add_shopping_cart</mat-icon>
+            Agregar al Carrito
+          </button>
+          <button mat-button (click)="selectedTickets.clear()">
+            Limpiar Selección
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensaje cuando no hay tickets -->
+  <div *ngIf="!loading && !error && tickets.length === 0" class="no-tickets">
+    <mat-icon>confirmation_number</mat-icon>
+    <h3>No hay tickets disponibles</h3>
+    <p>Todos los tickets de esta rifa han sido vendidos o reservados.</p>
+    <button mat-raised-button color="primary" (click)="goBack()">Volver al Dashboard</button>
+  </div>
+
+  <!-- Mensaje cuando no hay tickets filtrados -->
+  <div *ngIf="!loading && !error && tickets.length > 0 && getFilteredTickets().length === 0" class="no-filtered-tickets">
+    <mat-icon>search_off</mat-icon>
+    <h3>No hay tickets en este rango</h3>
+    <p>No se encontraron tickets desde el número {{ ticketFilter }}. Intenta con un número menor.</p>
+    <button mat-button (click)="clearFilter()">Limpiar filtro</button>
+  </div>
+
+  <!-- Leyenda -->
+  <div class="legend" *ngIf="!loading && !error && tickets.length > 0">
+    <h4>Leyenda</h4>
+    <div class="legend-items">
+      <div class="legend-item">
+        <div class="legend-color ticket-available"></div>
+        <span>Disponible</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color ticket-selected"></div>
+        <span>Seleccionado</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color ticket-reserved"></div>
+        <span>Reservado</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color ticket-sold"></div>
+        <span>Vendido</span>
+      </div>
+    </div>
+  </div>
+</div>

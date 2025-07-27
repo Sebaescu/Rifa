@@ -19,6 +19,8 @@ urlpatterns = [
     # Cart URLs
     path('cart/', views.get_cart, name='get_cart'),
     path('cart/add/', views.add_to_cart, name='add_to_cart'),
+    path('cart/add-raffle/', views.add_raffle_to_cart, name='add_raffle_to_cart'),
+    path('cart/add-tickets/', views.add_tickets_to_cart, name='add_tickets_to_cart'),
     path('cart/remove/<int:ticket_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('cart/clear/', views.clear_cart, name='clear_cart'),
     
