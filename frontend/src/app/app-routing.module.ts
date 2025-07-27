@@ -34,6 +34,11 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'mis-rifas',
+    loadChildren: () => import('./features/my-raffles/my-raffles.module').then(m => m.MyRafflesModule),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: '/auth/login'
   }

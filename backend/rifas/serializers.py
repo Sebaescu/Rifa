@@ -244,10 +244,11 @@ class CheckoutSerializer(serializers.Serializer):
     
     def validate(self, attrs):
         user = self.context['request'].user
-        try:
-            cart = user.cart
-            if not cart.items.exists():
-                raise serializers.ValidationError("Cart is empty.")
-        except Cart.DoesNotExist:
-            raise serializers.ValidationError("Cart does not exist.")
+        # Use get_or_create as a safety measure
+        cart, created = Cart.objects.get_or_create(user=user)
+        if created:
+            print(f"Cart created during checkout for user: {user.email}")
+        
+        if not cart.items.exists():
+            raise serializers.ValidationError("Cart is empty.")
         return attrs

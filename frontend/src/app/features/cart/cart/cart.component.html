@@ -150,4 +150,98 @@
       </button>
     </div>
   </div>
+
+  <!-- Popup de Confirmación -->
+  <div class="popup-overlay" *ngIf="showConfirmationDialog">
+    <div class="popup-container confirmation-popup">
+      <div class="popup-header">
+        <mat-icon class="popup-icon">help_outline</mat-icon>
+        <h2>Confirmar Compra</h2>
+      </div>
+
+      <div class="popup-content">
+        <p>¿Estás seguro de que deseas proceder con la compra?</p>
+
+        <div class="purchase-summary">
+          <div class="summary-line">
+            <span>Boletos:</span>
+            <span>{{ cart?.items?.length || 0 }}</span>
+          </div>
+          <div class="summary-line total">
+            <span>Total:</span>
+            <span>${{ cart?.total_amount || 0 | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <p class="confirmation-note">
+          <mat-icon>info</mat-icon>
+          Esta es una compra simulada. No se procesará ningún pago real.
+        </p>
+      </div>
+
+      <div class="popup-actions">
+        <button mat-button (click)="cancelPurchase()">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+        <button mat-raised-button color="primary" (click)="confirmPurchase()">
+          <mat-icon>payment</mat-icon>
+          Confirmar Compra
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup de Progreso de Pago -->
+  <div class="popup-overlay" *ngIf="showPaymentProgress">
+    <div class="popup-container progress-popup">
+      <div class="popup-header">
+        <mat-icon class="popup-icon spinning">sync</mat-icon>
+        <h2>Procesando Pago</h2>
+      </div>
+
+      <div class="popup-content">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p>Procesando tu compra...</p>
+        <p class="progress-note">Por favor, no cierres esta ventana.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup de Éxito -->
+  <div class="popup-overlay" *ngIf="showSuccessDialog">
+    <div class="popup-container success-popup">
+      <div class="popup-header">
+        <mat-icon class="popup-icon success">check_circle</mat-icon>
+        <h2>¡Compra Exitosa!</h2>
+      </div>
+
+      <div class="popup-content">
+        <p>Tu compra ha sido procesada exitosamente.</p>
+        <p>Los boletos han sido asignados a tu cuenta.</p>
+
+        <div class="success-details">
+          <div class="detail-item">
+            <mat-icon>confirmation_number</mat-icon>
+            <span>Boletos adquiridos correctamente</span>
+          </div>
+          <div class="detail-item">
+            <mat-icon>notifications</mat-icon>
+            <span>Recibirás notificaciones sobre el sorteo</span>
+          </div>
+          <div class="detail-item">
+            <mat-icon>emoji_events</mat-icon>
+            <span>¡Buena suerte en el sorteo!</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup-actions">
+        <button mat-raised-button color="primary" (click)="closeSuccessDialog()">
+          <mat-icon>home</mat-icon>
+          Ir al Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

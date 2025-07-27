@@ -496,7 +496,11 @@ def checkout(request):
     serializer = CheckoutSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         try:
-            cart = Cart.objects.get(user=request.user)
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            if created:
+                return Response({
+                    'error': 'Cart was empty'
+                }, status=status.HTTP_400_BAD_REQUEST)
             
             if not cart.items.exists():
                 return Response({
@@ -546,9 +550,9 @@ def checkout(request):
                 'message': 'Order created successfully'
             }, status=status.HTTP_201_CREATED)
             
-        except Cart.DoesNotExist:
+        except Exception as e:
             return Response({
-                'error': 'Cart does not exist'
+                'error': f'An error occurred: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

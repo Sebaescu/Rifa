@@ -397,3 +397,258 @@
     position: static;
   }
 }
+
+// Estilos para popups
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+
+  .popup-container {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: popupSlideIn 0.3s ease-out;
+
+    .popup-header {
+      text-align: center;
+      padding: 2rem 2rem 1rem 2rem;
+
+      .popup-icon {
+        font-size: 4rem;
+        width: 4rem;
+        height: 4rem;
+        margin-bottom: 1rem;
+
+        &.spinning {
+          animation: spin 2s linear infinite;
+          color: #667eea;
+        }
+
+        &.success {
+          color: #48bb78;
+        }
+      }
+
+      h2 {
+        margin: 0;
+        color: #2d3748;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+    }
+
+    .popup-content {
+      padding: 0 2rem 1rem 2rem;
+      text-align: center;
+
+      p {
+        color: #4a5568;
+        margin: 0.5rem 0;
+        line-height: 1.5;
+      }
+
+      .confirmation-note {
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #667eea;
+        font-size: 0.9rem;
+
+        mat-icon {
+          font-size: 1.2rem;
+          width: 1.2rem;
+          height: 1.2rem;
+        }
+      }
+
+      .progress-note {
+        font-size: 0.9rem;
+        color: #718096;
+        margin-top: 1rem;
+      }
+
+      mat-spinner {
+        margin: 1rem auto;
+      }
+
+      .purchase-summary {
+        background: #f7fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+
+        .summary-line {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 0.5rem;
+          color: #4a5568;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          &.total {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1.1rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e2e8f0;
+          }
+        }
+      }
+
+      .success-details {
+        text-align: left;
+        margin: 1.5rem 0;
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+          color: #4a5568;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          mat-icon {
+            color: #48bb78;
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+        }
+      }
+    }
+
+    .popup-actions {
+      padding: 1rem 2rem 2rem 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+
+        &[mat-raised-button] {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+          &:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+          }
+        }
+      }
+    }
+
+    &.confirmation-popup .popup-header .popup-icon {
+      color: #ed8936;
+    }
+
+    &.progress-popup {
+      .popup-content {
+        padding: 1rem 2rem 2rem 2rem;
+      }
+    }
+
+    &.success-popup {
+      .popup-header {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+
+        .popup-icon {
+          color: white;
+        }
+
+        h2 {
+          color: white;
+        }
+      }
+    }
+  }
+}
+
+// Animaciones
+@keyframes popupSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive para popups
+@media (max-width: 768px) {
+  .popup-overlay {
+    padding: 0.5rem;
+
+    .popup-container {
+      .popup-header {
+        padding: 1.5rem 1rem 0.75rem 1rem;
+
+        .popup-icon {
+          font-size: 3rem;
+          width: 3rem;
+          height: 3rem;
+        }
+
+        h2 {
+          font-size: 1.25rem;
+        }
+      }
+
+      .popup-content {
+        padding: 0 1rem 0.75rem 1rem;
+
+        .success-details {
+          .detail-item {
+            font-size: 0.9rem;
+          }
+        }
+      }
+
+      .popup-actions {
+        padding: 0.75rem 1rem 1.5rem 1rem;
+        flex-direction: column;
+
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,130 @@
+<div class="my-raffles-container">
+  <div class="header">
+    <h1>
+      <mat-icon>confirmation_number</mat-icon>
+      Mis Rifas
+    </h1>
+    <p class="subtitle">Aquí puedes ver todas las rifas en las que estás participando y tus tickets comprados</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando tus rifas...</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading" class="content">
+    <div *ngIf="userRaffles$ | async as raffles; else noRaffles">
+      <!-- Stats Summary -->
+      <div class="stats-summary">
+        <div class="stat-card">
+          <mat-icon>confirmation_number</mat-icon>
+          <div class="stat-info">
+            <span class="stat-number">{{ getTotalTickets(raffles) }}</span>
+            <span class="stat-label">Tickets Totales</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <mat-icon>casino</mat-icon>
+          <div class="stat-info">
+            <span class="stat-number">{{ raffles.length }}</span>
+            <span class="stat-label">Rifas Activas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raffles List -->
+      <div class="raffles-grid">
+        <mat-card
+          *ngFor="let raffleGroup of raffles; trackBy: trackByRaffleId"
+          class="raffle-card"
+          [class.featured]="raffleGroup.raffle?.featured">
+
+          <!-- Raffle Header -->
+          <mat-card-header>
+            <div mat-card-avatar class="raffle-avatar">
+              <img [src]="getImageUrl(raffleGroup.raffle?.image)"
+                   [alt]="raffleGroup.raffle?.name"
+                   (error)="$event.target.src='/assets/images/default-raffle.jpg'">
+            </div>
+            <mat-card-title>{{ raffleGroup.raffle?.name }}</mat-card-title>
+            <mat-card-subtitle>
+              <div class="raffle-meta">
+                <span class="scope">
+                  <mat-icon>{{ getScopeIcon(raffleGroup.raffle?.scope) }}</mat-icon>
+                  {{ getScopeText(raffleGroup.raffle?.scope) }}
+                </span>
+                <span class="date">{{ getTimeAgo(raffleGroup.raffle?.created_at) }}</span>
+              </div>
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <!-- Raffle Content -->
+          <mat-card-content>
+            <div class="raffle-info">
+              <div class="prize-section">
+                <h3>🏆 Premio</h3>
+                <p>{{ raffleGroup.raffle?.prize }}</p>
+              </div>
+
+              <div class="raffle-stats">
+                <div class="stat">
+                  <span class="label">Total Tickets:</span>
+                  <span class="value">{{ raffleGroup.raffle?.total_tickets }}</span>
+                </div>
+                <div class="stat">
+                  <span class="label">Tiempo Restante:</span>
+                  <span class="value">{{ getTimeRemaining(raffleGroup.raffle?.end_date) }}</span>
+                </div>
+              </div>
+
+              <!-- My Tickets Section -->
+              <div class="my-tickets-section">
+                <h3>
+                  <mat-icon>confirmation_number</mat-icon>
+                  Mis Tickets
+                  <mat-chip-set>
+                    <mat-chip color="primary">{{ raffleGroup.tickets.length || 0 }}</mat-chip>
+                  </mat-chip-set>
+                </h3>
+
+                <div class="tickets-grid" *ngIf="raffleGroup.tickets && raffleGroup.tickets.length > 0">
+                  <div
+                    *ngFor="let ticket of raffleGroup.tickets; trackBy: trackByTicketId"
+                    class="ticket-item"
+                    [class]="'status-' + ticket.status">
+                    <div class="ticket-number">
+                      <mat-icon>confirmation_number</mat-icon>
+                      #{{ ticket.number }}
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="!raffleGroup.tickets || raffleGroup.tickets.length === 0" class="no-tickets">
+                  <mat-icon>info</mat-icon>
+                  <span>No tienes tickets para esta rifa</span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- No Raffles State -->
+    <ng-template #noRaffles>
+      <div class="empty-state">
+        <mat-icon class="empty-icon">casino</mat-icon>
+        <h2>No tienes rifas aún</h2>
+        <p>¡Explora nuestras rifas disponibles y participa para ganar increíbles premios!</p>
+        <button mat-raised-button
+                color="primary"
+                (click)="router.navigate(['/raffles'])">
+          <mat-icon>search</mat-icon>
+          Explorar Rifas
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</div>

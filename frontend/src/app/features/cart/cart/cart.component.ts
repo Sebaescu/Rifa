@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CartService } from '../../../core/services/cart.service';
-import { Cart, CartItem } from '../../../shared/models/cart.model';
+import { Cart, CartItem, CheckoutRequest } from '../../../shared/models/cart.model';
 
 @Component({
   selector: 'app-cart',
@@ -15,6 +15,12 @@ export class CartComponent implements OnInit, OnDestroy {
   cart: Cart | null = null;
   isLoading = true;
   isProcessing = false;
+
+  // Estados para popups
+  showConfirmationDialog = false;
+  showPaymentProgress = false;
+  showSuccessDialog = false;
+
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -88,10 +94,60 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   proceedToCheckout(): void {
-    if (!this.cart || this.cart.items.length === 0) return;
+    if (!this.cart || this.cart.items.length === 0) {
+      this.showMessage('No hay boletos en el carrito');
+      return;
+    }
 
-    // TODO: Implementar checkout
-    this.showMessage('Función de checkout en desarrollo');
+    // Mostrar popup de confirmación
+    this.showConfirmationDialog = true;
+  }
+
+  confirmPurchase(): void {
+    this.showConfirmationDialog = false;
+    this.showPaymentProgress = true;
+    this.isProcessing = true;
+
+    // Simular proceso de pago (3 segundos)
+    setTimeout(() => {
+      this.processPurchase();
+    }, 3000);
+  }
+
+  cancelPurchase(): void {
+    this.showConfirmationDialog = false;
+    this.showMessage('Compra cancelada');
+  }
+
+  private processPurchase(): void {
+    if (!this.cart) return;
+
+    // Preparar datos para checkout
+    const checkoutData: CheckoutRequest = {
+      payment_method: 'simulated'
+    };
+
+    this.cartService.checkout(checkoutData).subscribe({
+      next: (response) => {
+        this.isProcessing = false;
+        this.showPaymentProgress = false;
+        this.showSuccessDialog = true;
+
+        // Limpiar el carrito
+        this.cart = null;
+      },
+      error: (error) => {
+        this.isProcessing = false;
+        this.showPaymentProgress = false;
+        console.error('Error processing purchase:', error);
+        this.showMessage('Error al procesar la compra. Inténtalo de nuevo.');
+      }
+    });
+  }
+
+  closeSuccessDialog(): void {
+    this.showSuccessDialog = false;
+    this.router.navigate(['/dashboard']);
   }
 
   continueShopping(): void {
