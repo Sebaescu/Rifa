@@ -5,7 +5,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { LocationApiService, Country, State } from '../../../core/services/location-api.service';
-
 @Component({
   selector: 'app-create-raffle',
   standalone: false,
@@ -32,9 +31,9 @@ export class CreateRaffleComponent implements OnInit {
   selectedStatesFormArray = new FormArray<FormControl<boolean | null>>([]);
 
   scopes = [
-    { value: 'provincial', label: 'Provincial - Estados/Provincias específicas', icon: 'location_city', description: 'Selecciona las provincias donde estará disponible tu rifa' },
-    { value: 'national', label: 'Nacional - Todo el país', icon: 'flag', description: 'Disponible en todo el país seleccionado' },
-    { value: 'international', label: 'Internacional - Múltiples países', icon: 'public', description: 'Selecciona los países donde estará disponible' }
+    { value: 'provincial', label: 'Provincial', icon: 'location_city', description: 'Selecciona las provincias donde estará disponible tu rifa' },
+    { value: 'national', label: 'Nacional', icon: 'flag', description: 'Disponible en todo el país seleccionado' },
+    { value: 'international', label: 'Internacional', icon: 'public', description: 'Selecciona los países donde estará disponible' }
   ];
 
   constructor(
@@ -86,9 +85,9 @@ export class CreateRaffleComponent implements OnInit {
 
   loadCountries(): void {
     this.loadingCountries = true;
-    
-    // Cargar países de Latinoamérica principalmente
-    this.locationApiService.getCountriesByRegion('latin-america').subscribe({
+
+    // Cargar todos los países del mundo
+    this.locationApiService.getCountries().subscribe({
       next: (countries: Country[]) => {
         this.availableCountries = countries.sort((a: Country, b: Country) => a.name.localeCompare(b.name));
         this.initializeCountriesFormArray();
@@ -170,6 +169,7 @@ export class CreateRaffleComponent implements OnInit {
     this.availableStates = [];
     this.clearStatesSelection();
 
+    // Cargar estados del país seleccionado
     this.locationApiService.getStatesByCountry(countryCode).subscribe({
       next: (states: State[]) => {
         this.availableStates = states.sort((a: State, b: State) => a.name.localeCompare(b.name));
@@ -226,13 +226,13 @@ export class CreateRaffleComponent implements OnInit {
   }
 
   getSelectedCountries(): Country[] {
-    return this.availableCountries.filter((country, index) => 
+    return this.availableCountries.filter((country, index) =>
       this.selectedCountriesFormArray.at(index)?.value === true
     );
   }
 
   getSelectedStates(): State[] {
-    return this.availableStates.filter((state, index) => 
+    return this.availableStates.filter((state, index) =>
       this.selectedStatesFormArray.at(index)?.value === true
     );
   }

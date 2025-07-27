@@ -75,23 +75,6 @@ export class LocationApiService {
   }
 
   /**
-   * Obtiene países de una región específica (opcional para filtrar por región)
-   */
-  getCountriesByRegion(region: string): Observable<Country[]> {
-    // La API de countrystatecity no tiene filtro por región directamente
-    // Pero podemos filtrar manualmente países de Latinoamérica
-    return this.getCountries().pipe(
-      map(countries => {
-        if (region === 'latin-america') {
-          const latinAmericaCodes = ['AR', 'BO', 'BR', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'SV', 'GT', 'HN', 'MX', 'NI', 'PA', 'PY', 'PE', 'UY', 'VE'];
-          return countries.filter(country => latinAmericaCodes.includes(country.iso2));
-        }
-        return countries;
-      })
-    );
-  }
-
-  /**
    * Manejo de errores HTTP
    */
   private handleError(error: any): Observable<never> {
