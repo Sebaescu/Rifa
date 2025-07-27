@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 import { RaffleService } from '../../../core/services/raffle.service';
-import { Location } from '../../../shared/models/raffle.model';
+import { LocationApiService, Country, State } from '../../../core/services/location-api.service';
 
 @Component({
   selector: 'app-create-raffle',
@@ -17,10 +18,18 @@ export class CreateRaffleComponent implements OnInit {
   selectedImage: File | null = null;
   imagePreview: string | null = null;
 
-  // Datos geográficos
-  availableCountries: any[] = [];
-  availableStates: any[] = [];
-  selectedCountry: any = null;
+  // Loading states
+  loadingCountries = true;
+  loadingStates = false;
+
+  // Datos geográficos reales de la API
+  availableCountries: Country[] = [];
+  availableStates: State[] = [];
+  selectedCountry: Country | null = null;
+
+  // FormArrays para checkboxes
+  selectedCountriesFormArray = new FormArray<FormControl<boolean | null>>([]);
+  selectedStatesFormArray = new FormArray<FormControl<boolean | null>>([]);
 
   scopes = [
     { value: 'provincial', label: 'Provincial - Estados/Provincias específicas', icon: 'location_city', description: 'Selecciona las provincias donde estará disponible tu rifa' },
@@ -28,60 +37,12 @@ export class CreateRaffleComponent implements OnInit {
     { value: 'international', label: 'Internacional - Múltiples países', icon: 'public', description: 'Selecciona los países donde estará disponible' }
   ];
 
-  // Datos de ejemplo para países y estados
-  mockCountries = [
-    { id: 0, name: 'Todos los países', code: 'ALL' }, // Opción especial para internacional
-    { id: 1, name: 'Ecuador', code: 'EC' },
-    { id: 2, name: 'Colombia', code: 'CO' },
-    { id: 3, name: 'Perú', code: 'PE' },
-    { id: 4, name: 'México', code: 'MX' },
-    { id: 5, name: 'Argentina', code: 'AR' },
-    { id: 6, name: 'Chile', code: 'CL' },
-    { id: 7, name: 'Brasil', code: 'BR' },
-    { id: 8, name: 'Uruguay', code: 'UY' },
-    { id: 9, name: 'Venezuela', code: 'VE' },
-    { id: 10, name: 'Bolivia', code: 'BO' }
-  ];
-
-  mockStates: { [key: number]: any[] } = {
-    1: [ // Ecuador
-      { id: 0, name: 'Todas las provincias', countryId: 1 }, // Opción especial
-      { id: 1, name: 'Pichincha', countryId: 1 },
-      { id: 2, name: 'Guayas', countryId: 1 },
-      { id: 3, name: 'Azuay', countryId: 1 },
-      { id: 4, name: 'Manabí', countryId: 1 },
-      { id: 5, name: 'El Oro', countryId: 1 },
-      { id: 6, name: 'Tungurahua', countryId: 1 }
-    ],
-    2: [ // Colombia
-      { id: 0, name: 'Todos los departamentos', countryId: 2 }, // Opción especial
-      { id: 7, name: 'Cundinamarca', countryId: 2 },
-      { id: 8, name: 'Antioquia', countryId: 2 },
-      { id: 9, name: 'Valle del Cauca', countryId: 2 },
-      { id: 10, name: 'Atlántico', countryId: 2 },
-      { id: 11, name: 'Santander', countryId: 2 }
-    ],
-    3: [ // Perú
-      { id: 0, name: 'Todos los departamentos', countryId: 3 },
-      { id: 12, name: 'Lima', countryId: 3 },
-      { id: 13, name: 'Arequipa', countryId: 3 },
-      { id: 14, name: 'Cusco', countryId: 3 },
-      { id: 15, name: 'La Libertad', countryId: 3 }
-    ],
-    4: [ // México
-      { id: 0, name: 'Todos los estados', countryId: 4 },
-      { id: 16, name: 'Ciudad de México', countryId: 4 },
-      { id: 17, name: 'Jalisco', countryId: 4 },
-      { id: 18, name: 'Nuevo León', countryId: 4 },
-      { id: 19, name: 'Yucatán', countryId: 4 }
-    ]
-  };
-
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private snackBar: MatSnackBar,
-    private raffleService: RaffleService
+    private raffleService: RaffleService,
+    private locationApiService: LocationApiService
   ) {}
 
   ngOnInit(): void {
@@ -94,13 +55,15 @@ export class CreateRaffleComponent implements OnInit {
     this.raffleForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
+      terms_conditions: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
       ticket_price: ['', [Validators.required, Validators.min(1), Validators.max(10000)]],
       total_tickets: ['', [Validators.required, Validators.min(1), Validators.max(10000)]],
       start_date: ['', Validators.required],
       end_date: ['', Validators.required],
       scope: ['provincial', Validators.required],
-      selectedCountry: ['', Validators.required], // Siempre requerido
-      selectedStates: [[]]
+      selectedCountry: [''], // Solo requerido para nacional y provincial
+      selectedCountries: this.selectedCountriesFormArray, // Para internacional
+      selectedStates: this.selectedStatesFormArray // Para provincial
     });
   }
 
@@ -110,46 +73,168 @@ export class CreateRaffleComponent implements OnInit {
       this.onScopeChange(scope);
     });
 
-    // Observar selección de país para cargar estados
-    this.raffleForm.get('selectedCountry')?.valueChanges.subscribe(countryId => {
-      if (countryId) {
-        this.loadStatesForCountry(countryId);
+    // Observar selección de país para cargar estados (solo para scope provincial)
+    this.raffleForm.get('selectedCountry')?.valueChanges.subscribe(countryCode => {
+      if (countryCode && this.raffleForm.get('scope')?.value === 'provincial') {
+        this.loadStatesForCountry(countryCode);
       } else {
         this.availableStates = [];
+        this.clearStatesSelection();
       }
     });
   }
 
   loadCountries(): void {
-    // En una aplicación real, esto vendría de un servicio
-    this.availableCountries = this.mockCountries;
+    this.loadingCountries = true;
+    
+    // Cargar países de Latinoamérica principalmente
+    this.locationApiService.getCountriesByRegion('latin-america').subscribe({
+      next: (countries: Country[]) => {
+        this.availableCountries = countries.sort((a: Country, b: Country) => a.name.localeCompare(b.name));
+        this.initializeCountriesFormArray();
+        this.loadingCountries = false;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar países:', error);
+        this.snackBar.open('Error al cargar los países. Intenta más tarde.', 'Cerrar', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+        this.loadingCountries = false;
+      }
+    });
+  }
+
+  initializeCountriesFormArray(): void {
+    // Limpiar FormArray existente
+    while (this.selectedCountriesFormArray.length !== 0) {
+      this.selectedCountriesFormArray.removeAt(0);
+    }
+
+    // Crear controles para cada país
+    this.availableCountries.forEach(() => {
+      this.selectedCountriesFormArray.push(new FormControl(false));
+    });
+  }
+
+  initializeStatesFormArray(): void {
+    // Limpiar FormArray existente
+    while (this.selectedStatesFormArray.length !== 0) {
+      this.selectedStatesFormArray.removeAt(0);
+    }
+
+    // Crear controles para cada estado
+    this.availableStates.forEach(() => {
+      this.selectedStatesFormArray.push(new FormControl(false));
+    });
   }
 
   onScopeChange(scope: string): void {
-    // Limpiar selecciones de estados
-    this.raffleForm.patchValue({
-      selectedStates: []
-    });
-
-    this.availableStates = [];
+    // Limpiar selecciones previas
+    this.clearAllSelections();
 
     // Configurar validaciones según el scope
+    const countryControl = this.raffleForm.get('selectedCountry');
+    const countriesControl = this.raffleForm.get('selectedCountries');
     const statesControl = this.raffleForm.get('selectedStates');
 
-    if (scope === 'provincial') {
-      statesControl?.setValidators([Validators.required]);
-    } else {
-      statesControl?.clearValidators();
+    // Limpiar todas las validaciones
+    countryControl?.clearValidators();
+    countriesControl?.clearValidators();
+    statesControl?.clearValidators();
+
+    switch (scope) {
+      case 'national':
+        // Solo requiere selección de un país
+        countryControl?.setValidators([Validators.required]);
+        break;
+      case 'provincial':
+        // Requiere país y al menos un estado
+        countryControl?.setValidators([Validators.required]);
+        statesControl?.setValidators([this.atLeastOneSelectedValidator]);
+        break;
+      case 'international':
+        // Requiere al menos un país
+        countriesControl?.setValidators([this.atLeastOneSelectedValidator]);
+        break;
     }
+
+    // Actualizar validaciones
+    countryControl?.updateValueAndValidity();
+    countriesControl?.updateValueAndValidity();
     statesControl?.updateValueAndValidity();
   }
 
-  loadStatesForCountry(countryId: number): void {
-    if (this.mockStates[countryId]) {
-      this.availableStates = this.mockStates[countryId];
-    } else {
-      this.availableStates = [];
+  loadStatesForCountry(countryCode: string): void {
+    this.loadingStates = true;
+    this.availableStates = [];
+    this.clearStatesSelection();
+
+    this.locationApiService.getStatesByCountry(countryCode).subscribe({
+      next: (states: State[]) => {
+        this.availableStates = states.sort((a: State, b: State) => a.name.localeCompare(b.name));
+        this.initializeStatesFormArray();
+        this.loadingStates = false;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar estados:', error);
+        this.snackBar.open('Error al cargar los estados. Intenta más tarde.', 'Cerrar', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+        this.loadingStates = false;
+      }
+    });
+  }
+
+  clearAllSelections(): void {
+    this.raffleForm.patchValue({
+      selectedCountry: '',
+    });
+    this.clearCountriesSelection();
+    this.clearStatesSelection();
+    this.availableStates = [];
+  }
+
+  clearCountriesSelection(): void {
+    this.selectedCountriesFormArray.controls.forEach(control => {
+      control.setValue(false);
+    });
+  }
+
+  clearStatesSelection(): void {
+    this.selectedStatesFormArray.controls.forEach(control => {
+      control.setValue(false);
+    });
+  }
+
+  // Validador personalizado para verificar que al menos uno esté seleccionado
+  atLeastOneSelectedValidator(control: any): { [key: string]: any } | null {
+    if (control && control.controls) {
+      const hasSelection = control.controls.some((ctrl: any) => ctrl.value === true);
+      return hasSelection ? null : { atLeastOneRequired: true };
     }
+    return { atLeastOneRequired: true };
+  }
+
+  onCountryCheckboxChange(event: MatCheckboxChange, index: number): void {
+    this.selectedCountriesFormArray.at(index).setValue(event.checked);
+  }
+
+  onStateCheckboxChange(event: MatCheckboxChange, index: number): void {
+    this.selectedStatesFormArray.at(index).setValue(event.checked);
+  }
+
+  getSelectedCountries(): Country[] {
+    return this.availableCountries.filter((country, index) => 
+      this.selectedCountriesFormArray.at(index)?.value === true
+    );
+  }
+
+  getSelectedStates(): State[] {
+    return this.availableStates.filter((state, index) => 
+      this.selectedStatesFormArray.at(index)?.value === true
+    );
   }
 
   onImageSelected(event: any): void {
@@ -193,12 +278,14 @@ export class CreateRaffleComponent implements OnInit {
     const fieldLabels: { [key: string]: string } = {
       'name': 'El nombre de la rifa',
       'description': 'La descripción',
+      'terms_conditions': 'Los términos y condiciones',
       'ticket_price': 'El precio por boleto',
       'total_tickets': 'La cantidad de boletos',
       'start_date': 'La fecha de inicio',
       'end_date': 'La fecha de fin',
       'scope': 'El alcance geográfico',
       'selectedCountry': 'El país',
+      'selectedCountries': 'Los países',
       'selectedStates': 'Las provincias/estados'
     };
 
@@ -206,6 +293,7 @@ export class CreateRaffleComponent implements OnInit {
 
     if (field?.errors) {
       if (field.errors['required']) return `${friendlyName} es requerido`;
+      if (field.errors['atLeastOneRequired']) return `Debe seleccionar al menos uno`;
       if (field.errors['minlength']) return `${friendlyName} debe tener mínimo ${field.errors['minlength'].requiredLength} caracteres`;
       if (field.errors['maxlength']) return `${friendlyName} debe tener máximo ${field.errors['maxlength'].requiredLength} caracteres`;
       if (field.errors['min']) return `${friendlyName} debe ser mínimo ${field.errors['min'].min}`;
@@ -220,18 +308,59 @@ export class CreateRaffleComponent implements OnInit {
       this.isLoading = true;
 
       const formData = new FormData();
+      const formValues = this.raffleForm.value;
 
-      // Agregar los campos del formulario
-      Object.keys(this.raffleForm.value).forEach(key => {
-        const value = this.raffleForm.value[key];
-        if (value !== null && value !== undefined) {
-          if (key === 'allowed_locations') {
-            formData.append(key, JSON.stringify(value));
-          } else {
-            formData.append(key, value.toString());
+      // Agregar los campos básicos del formulario
+      formData.append('name', formValues.name);
+      formData.append('description', formValues.description);
+      formData.append('terms_conditions', formValues.terms_conditions);
+      formData.append('ticket_price', formValues.ticket_price.toString());
+      formData.append('total_tickets', formValues.total_tickets.toString());
+      formData.append('start_date', formValues.start_date);
+      formData.append('end_date', formValues.end_date);
+      formData.append('scope', formValues.scope);
+
+      // Agregar ubicaciones permitidas según el scope
+      const allowedLocations: any[] = [];
+
+      switch (formValues.scope) {
+        case 'national':
+          const selectedCountry = this.availableCountries.find(c => c.iso2 === formValues.selectedCountry);
+          if (selectedCountry) {
+            allowedLocations.push({
+              country_code: selectedCountry.iso2,
+              country_name: selectedCountry.name,
+              type: 'country'
+            });
           }
-        }
-      });
+          break;
+
+        case 'provincial':
+          const selectedStates = this.getSelectedStates();
+          selectedStates.forEach(state => {
+            allowedLocations.push({
+              country_code: state.country_code,
+              country_name: state.country_name,
+              state_code: state.state_code,
+              state_name: state.name,
+              type: 'state'
+            });
+          });
+          break;
+
+        case 'international':
+          const selectedCountries = this.getSelectedCountries();
+          selectedCountries.forEach(country => {
+            allowedLocations.push({
+              country_code: country.iso2,
+              country_name: country.name,
+              type: 'country'
+            });
+          });
+          break;
+      }
+
+      formData.append('allowed_locations', JSON.stringify(allowedLocations));
 
       // Agregar la imagen si existe
       if (this.selectedImage) {
@@ -281,6 +410,13 @@ export class CreateRaffleComponent implements OnInit {
     Object.keys(this.raffleForm.controls).forEach(key => {
       const control = this.raffleForm.get(key);
       control?.markAsTouched();
+
+      // Marcar también los controles de FormArray
+      if (control instanceof FormArray) {
+        control.controls.forEach(arrayControl => {
+          arrayControl.markAsTouched();
+        });
+      }
     });
   }
 

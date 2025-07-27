@@ -209,14 +209,9 @@
           <mat-form-field appearance="outline" class="full-width">
             <mat-select formControlName="scope" placeholder="Selecciona el alcance" (selectionChange)="onScopeChange($event.value)">
               <mat-option *ngFor="let scope of scopes" [value]="scope.value">
-                <div class="scope-option">
-                  <div class="scope-info">
-                    <mat-icon>{{ scope.icon }}</mat-icon>
-                    <div>
-                      <span class="scope-title">{{ scope.label }}</span>
-                      <small class="scope-description">{{ scope.description }}</small>
-                    </div>
-                  </div>
+                <div class="scope-option-simple">
+                  <mat-icon>{{ scope.icon }}</mat-icon>
+                  <span>{{ scope.label }}</span>
                 </div>
               </mat-option>
             </mat-select>
@@ -229,16 +224,16 @@
         <!-- Selectores de ubicación -->
         <div class="location-selectors">
 
-          <!-- Selector de país (siempre visible) -->
-          <div class="location-field">
+          <!-- Selector de país único (para nacional y provincial) -->
+          <div *ngIf="raffleForm.get('scope')?.value === 'national' || raffleForm.get('scope')?.value === 'provincial'" class="location-field">
             <label class="field-label">
               País
               <span class="required">*</span>
             </label>
             <mat-form-field appearance="outline" class="full-width">
               <mat-select formControlName="selectedCountry" placeholder="Selecciona un país">
-                <mat-option *ngFor="let country of availableCountries" [value]="country.id">
-                  {{ country.name }}
+                <mat-option *ngFor="let country of availableCountries" [value]="country.iso2">
+                  <span>{{ country.name }}</span>
                 </mat-option>
               </mat-select>
               <mat-error *ngIf="isFieldInvalid('selectedCountry')">
@@ -247,31 +242,68 @@
             </mat-form-field>
           </div>
 
-          <!-- Selector de provincias/estados (solo para scope provincial) -->
+          <!-- Checkboxes para múltiples países (internacional) -->
+          <div *ngIf="raffleForm.get('scope')?.value === 'international'" class="location-field">
+            <label class="field-label">
+              Países
+              <span class="required">*</span>
+            </label>
+            <div class="checkbox-group countries-checkbox-group">
+              <div *ngIf="loadingCountries" class="loading-state">
+                <mat-spinner diameter="30"></mat-spinner>
+                <span>Cargando países...</span>
+              </div>
+              <div *ngIf="!loadingCountries && availableCountries.length > 0" class="checkbox-container">
+                <mat-checkbox
+                  *ngFor="let country of availableCountries; let i = index"
+                  [checked]="selectedCountriesFormArray.at(i).value"
+                  (change)="onCountryCheckboxChange($event, i)"
+                  class="country-checkbox">
+                  <div class="checkbox-content">
+                    <span class="country-name">{{ country.name }}</span>
+                  </div>
+                </mat-checkbox>
+              </div>
+            </div>
+            <mat-error *ngIf="isFieldInvalid('selectedCountries')">
+              {{ getFieldError('selectedCountries') }}
+            </mat-error>
+          </div>
+
+          <!-- Checkboxes para provincias/estados (solo para scope provincial) -->
           <div *ngIf="raffleForm.get('scope')?.value === 'provincial' && availableStates.length > 0" class="location-field">
             <label class="field-label">
               Provincias/Estados
               <span class="required">*</span>
             </label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select formControlName="selectedStates"
-                         [multiple]="true"
-                         placeholder="Selecciona provincias/estados">
-                <mat-option *ngFor="let state of availableStates" [value]="state.id">
-                  {{ state.name }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="isFieldInvalid('selectedStates')">
-                {{ getFieldError('selectedStates') }}
-              </mat-error>
-            </mat-form-field>
+            <div class="checkbox-group states-checkbox-group">
+              <div *ngIf="loadingStates" class="loading-state">
+                <mat-spinner diameter="30"></mat-spinner>
+                <span>Cargando estados...</span>
+              </div>
+              <div *ngIf="!loadingStates && availableStates.length > 0" class="checkbox-container">
+                <mat-checkbox
+                  *ngFor="let state of availableStates; let i = index"
+                  [checked]="selectedStatesFormArray.at(i).value"
+                  (change)="onStateCheckboxChange($event, i)"
+                  class="state-checkbox">
+                  <div class="checkbox-content">
+                    <span class="state-name">{{ state.name }}</span>
+                    <span class="state-type">{{ state.type }}</span>
+                  </div>
+                </mat-checkbox>
+              </div>
+            </div>
+            <mat-error *ngIf="isFieldInvalid('selectedStates')">
+              {{ getFieldError('selectedStates') }}
+            </mat-error>
           </div>
 
           <!-- Información de ayuda según el scope -->
           <div class="scope-help-info">
             <div *ngIf="raffleForm.get('scope')?.value === 'provincial'" class="help-text">
               <mat-icon>info</mat-icon>
-              <span>Selecciona las provincias/estados específicos donde estará disponible tu rifa. Si seleccionas "Todas las provincias", la rifa estará disponible en todo el país.</span>
+              <span>Selecciona las provincias/estados específicos donde estará disponible tu rifa.</span>
             </div>
             <div *ngIf="raffleForm.get('scope')?.value === 'national'" class="help-text">
               <mat-icon>info</mat-icon>
@@ -279,7 +311,7 @@
             </div>
             <div *ngIf="raffleForm.get('scope')?.value === 'international'" class="help-text">
               <mat-icon>info</mat-icon>
-              <span>La rifa estará disponible en todo el mundo. Si seleccionas "Todos los países", será completamente internacional.</span>
+              <span>Selecciona los países donde estará disponible tu rifa.</span>
             </div>
           </div>
 
