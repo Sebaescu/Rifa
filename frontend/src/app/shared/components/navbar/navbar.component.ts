@@ -85,7 +85,7 @@ import { User } from '../../models/user.model';
               <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-trigger">
                 <div class="user-info">
                   <mat-icon>account_circle</mat-icon>
-                  <span class="user-name">{{ currentUser.first_name }}</span>
+                  <span class="user-name">{{ currentUser.username }}</span>
                   <mat-icon class="dropdown-icon">keyboard_arrow_down</mat-icon>
                 </div>
               </button>
@@ -736,6 +736,11 @@ export class NavbarComponent implements OnInit {
     // Listen to window resize
     window.addEventListener('resize', () => this.checkMobile());
 
+    // Subscribe to authentication changes
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+
     // Listen to router events to detect auth routes
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -767,8 +772,17 @@ export class NavbarComponent implements OnInit {
   }
 
   private loadActiveRafflesCount() {
-    // Mock data for now - replace with actual raffle service call
-    this.activeRafflesCount = 12;
+    // Obtener estadísticas reales del backend
+    this.raffleService.getRaffleStatistics().subscribe({
+      next: (stats) => {
+        this.activeRafflesCount = stats.total_active_raffles;
+      },
+      error: (error) => {
+        console.error('Error loading raffle statistics:', error);
+        // Fallback a 0 si hay error
+        this.activeRafflesCount = 0;
+      }
+    });
   }
 
   toggleMobileMenu() {
@@ -790,8 +804,17 @@ export class NavbarComponent implements OnInit {
   }
 
   logout() {
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/auth/login']);
+    console.log('Navbar: Starting logout process');
+    this.authService.logout().subscribe({
+      next: (response) => {
+        console.log('Navbar: Logout successful, redirecting to login');
+        this.router.navigate(['/auth/login']);
+      },
+      error: (error) => {
+        console.error('Navbar: Logout error, but still redirecting:', error);
+        // Even if logout fails, redirect to login
+        this.router.navigate(['/auth/login']);
+      }
     });
   }
 }

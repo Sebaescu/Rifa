@@ -20,15 +20,15 @@
 
   <!-- Navigation Cards Section -->
   <div class="navigation-grid" *ngIf="!isLoading && totalActiveRaffles > 0">
-    <div class="nav-card local-card" (click)="navigateToScope('local')">
+    <div class="nav-card local-card" (click)="navigateToScope('provincial')">
       <div class="card-background">
         <div class="card-content-centered">
           <div class="card-icon">
             <mat-icon>location_city</mat-icon>
           </div>
           <h3>Provinciales</h3>
-          <p class="card-description">Rifas locales cerca de ti</p>
-          <div class="card-number">{{ localRaffles.length }}</div>
+          <p class="card-description">Rifas de tu provincia</p>
+          <div class="card-number">{{ stateRaffles.length }}</div>
         </div>
         <div class="card-arrow">
           <mat-icon>arrow_forward</mat-icon>
@@ -96,28 +96,28 @@
   <!-- Raffles Showcase -->
   <div *ngIf="!isLoading && totalActiveRaffles > 0" class="raffles-showcase">
 
-    <!-- Local Raffles -->
-    <section class="raffle-section local-section" *ngIf="localRaffles.length > 0">
+    <!-- Provincial/State Raffles -->
+    <section class="raffle-section local-section" *ngIf="stateRaffles.length > 0">
       <div class="section-header">
         <div class="header-content">
           <div class="section-icon">
             <mat-icon>location_city</mat-icon>
           </div>
           <div class="header-text">
-            <h2>{{ getScopeTitle('local') }}</h2>
-            <p>Rifas en tu área local</p>
+            <h2>{{ getScopeTitle('state') }}</h2>
+            <p>Rifas en tu provincia/estado</p>
           </div>
         </div>
         <div class="section-badge">
-          <span class="badge-count">{{ localRaffles.length }}</span>
+          <span class="badge-count">{{ stateRaffles.length }}</span>
           <span class="badge-label">rifas</span>
         </div>
       </div>
       <div class="modern-raffles-grid">
-        <div class="modern-raffle-card" *ngFor="let raffle of localRaffles.slice(0, 4)"
+        <div class="modern-raffle-card" *ngFor="let raffle of stateRaffles.slice(0, 4)"
              (click)="viewRaffleDetails(raffle.id)">
           <div class="card-image-container">
-            <img [src]="raffle.image || 'assets/images/raffles/examples/placeholder.svg'" [alt]="raffle.name">
+            <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
             <div class="image-overlay">
               <div class="distance-badge" *ngIf="raffle.distance_km">
                 <mat-icon>near_me</mat-icon>
@@ -170,7 +170,7 @@
         <div class="modern-raffle-card" *ngFor="let raffle of nationalRaffles.slice(0, 4)"
              (click)="viewRaffleDetails(raffle.id)">
           <div class="card-image-container">
-            <img [src]="raffle.image || 'assets/images/raffles/examples/placeholder.svg'" [alt]="raffle.name">
+            <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
           </div>
           <div class="card-content">
             <h3 class="card-title">{{ raffle.name }}</h3>
@@ -217,7 +217,7 @@
         <div class="modern-raffle-card" *ngFor="let raffle of internationalRaffles.slice(0, 4)"
              (click)="viewRaffleDetails(raffle.id)">
           <div class="card-image-container">
-            <img [src]="raffle.image || 'assets/images/raffles/examples/placeholder.svg'" [alt]="raffle.name">
+            <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
           </div>
           <div class="card-content">
             <h3 class="card-title">{{ raffle.name }}</h3>

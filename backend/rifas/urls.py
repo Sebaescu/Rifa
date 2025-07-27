@@ -29,4 +29,7 @@ urlpatterns = [
     
     # User tickets
     path('my-tickets/', views.user_tickets, name='user_tickets'),
+    
+    # Statistics
+    path('statistics/', views.raffle_statistics, name='raffle_statistics'),
 ]

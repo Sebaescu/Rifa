@@ -34,44 +34,84 @@ export class DashboardComponent implements OnInit {
 
   loadRaffles(): void {
     this.isLoading = true;
+    console.log('DEBUG: Loading raffles with user location:', this.userLocation);
+
+    // Cargar rifas filtradas por ubicación
     this.raffleService.getRafflesNearUser().subscribe({
       next: (response: {count: number, results: Raffle[]}) => {
-        let raffles = response.results;
-
-        // Si no hay rifas del servidor, agregar datos de ejemplo
-        if (raffles.length === 0) {
-          raffles = this.getExampleRaffles();
-        }
+        console.log('DEBUG: Received raffles from server:', response);
+        const raffles = response.results;
 
         this.organizeRafflesByLocation(raffles);
-        this.totalActiveRaffles = raffles.filter(r => r.status === 'active').length;
         this.isLoading = false;
       },
       error: (error: any) => {
         console.error('Error loading raffles:', error);
-        // En caso de error, cargar datos de ejemplo
-        const exampleRaffles = this.getExampleRaffles();
-        this.organizeRafflesByLocation(exampleRaffles);
-        this.totalActiveRaffles = exampleRaffles.filter(r => r.status === 'active').length;
         this.isLoading = false;
+        // Reset arrays on error
+        this.localRaffles = [];
+        this.stateRaffles = [];
+        this.nationalRaffles = [];
+        this.internationalRaffles = [];
+        this.totalActiveRaffles = 0;
+      }
+    });
+
+    // Cargar estadísticas generales para obtener el total real de rifas activas
+    this.raffleService.getRaffleStatistics().subscribe({
+      next: (stats) => {
+        console.log('DEBUG: Received statistics:', stats);
+        this.totalActiveRaffles = stats.total_active_raffles;
+      },
+      error: (error: any) => {
+        console.error('Error loading statistics:', error);
+        // Fallback: mantener el contador local si falla
       }
     });
   }
 
   private organizeRafflesByLocation(raffles: Raffle[]): void {
     const activeRaffles = raffles.filter(r => r.status === 'active');
+    console.log('DEBUG: Organizing raffles by location:', {
+      totalRaffles: raffles.length,
+      activeRaffles: activeRaffles.length,
+      userLocation: this.userLocation
+    });
 
-    this.localRaffles = activeRaffles.filter(r => r.scope === 'provincial')
-      .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    // Reset arrays
+    this.localRaffles = [];
+    this.stateRaffles = [];
+    this.nationalRaffles = [];
+    this.internationalRaffles = [];
 
-    this.stateRaffles = activeRaffles.filter(r => r.scope === 'provincial')
-      .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    activeRaffles.forEach(raffle => {
+      console.log(`DEBUG: Processing raffle "${raffle.name}" with scope: ${raffle.scope}`);
 
-    this.nationalRaffles = activeRaffles.filter(r => r.scope === 'national')
-      .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+      switch(raffle.scope) {
+        case 'provincial':
+          this.stateRaffles.push(raffle);
+          break;
+        case 'national':
+          this.nationalRaffles.push(raffle);
+          break;
+        case 'international':
+          this.internationalRaffles.push(raffle);
+          break;
+        default:
+          console.warn(`Unknown scope: ${raffle.scope} for raffle: ${raffle.name}`);
+      }
+    });
 
-    this.internationalRaffles = activeRaffles.filter(r => r.scope === 'international')
-      .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    // Sort by distance if available, otherwise by creation date
+    this.stateRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    this.nationalRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    this.internationalRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+
+    console.log('DEBUG: Raffles organized:', {
+      provincial: this.stateRaffles.length,
+      national: this.nationalRaffles.length,
+      international: this.internationalRaffles.length
+    });
   }
 
   viewRaffleDetails(raffleId: number): void {
@@ -94,6 +134,21 @@ export class DashboardComponent implements OnInit {
       'international': 'Rifas Internacionales'
     };
     return titles[scope as keyof typeof titles] || 'Rifas';
+  }
+
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) {
+      return '/assets/images/default-raffle.jpg';
+    }
+
+    // Si la URL ya es completa (comienza con http), devolverla tal como está
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+
+    // Si es una URL relativa, construir la URL completa
+    const baseUrl = 'http://localhost:8000';
+    return `${baseUrl}${imageUrl}`;
   }
 
   navigateToScope(scope: string): void {

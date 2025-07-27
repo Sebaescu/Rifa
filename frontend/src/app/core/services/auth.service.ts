@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map, catchError, of } from 'rxjs';
 import { User, AuthResponse, LoginRequest, RegisterRequest } from '../../shared/models/user.model';
 
 @Injectable({
@@ -19,8 +19,8 @@ export class AuthService {
   }
 
   private loadFromStorage(): void {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
+    const token = sessionStorage.getItem('token');
+    const userData = sessionStorage.getItem('user');
 
     if (token && userData) {
       try {
@@ -35,7 +35,7 @@ export class AuthService {
         }
       } catch (error) {
         // Error al parsear JSON, limpiar
-        console.error('Error parsing user data from localStorage:', error);
+        console.error('Error parsing user data from sessionStorage:', error);
         this.clearAuthData();
       }
     }
@@ -56,9 +56,20 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
+    console.log('AuthService: Starting logout process');
     return this.http.post(`${this.API_URL}/logout/`, {})
       .pipe(
-        tap(() => this.clearAuthData())
+        tap({
+          next: (response) => {
+            console.log('AuthService: Logout successful', response);
+            this.clearAuthData();
+          },
+          error: (error) => {
+            console.error('AuthService: Logout failed', error);
+            // Even if server logout fails, clear local data
+            this.clearAuthData();
+          }
+        })
       );
   }
 
@@ -79,7 +90,7 @@ export class AuthService {
       .pipe(
         tap(user => {
           this.currentUserSubject.next(user);
-          localStorage.setItem('user', JSON.stringify(user));
+          sessionStorage.setItem('user', JSON.stringify(user));
         })
       );
   }
@@ -89,15 +100,20 @@ export class AuthService {
   }
 
   private handleAuthResponse(response: AuthResponse): void {
-    localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(response.user));
+    console.log('AuthService: Handling auth response', response);
+    sessionStorage.setItem('token', response.token);
+    sessionStorage.setItem('user', JSON.stringify(response.user));
     this.tokenSubject.next(response.token);
     this.currentUserSubject.next(response.user);
   }
 
-  private clearAuthData(): void {
+  public clearAuthData(): void {
+    console.log('AuthService: Clearing auth data');
+    // Clear both localStorage and sessionStorage to be safe
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
   }
@@ -111,7 +127,7 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    const token = this.tokenSubject.value || localStorage.getItem('token');
+    const token = this.tokenSubject.value || sessionStorage.getItem('token');
     const user = this.currentUserSubject.value;
 
     if (!token || !user) {
@@ -133,5 +149,27 @@ export class AuthService {
 
   getToken(): string | null {
     return this.tokenSubject.value;
+  }
+
+  // Método para verificar si el token sigue siendo válido en el servidor
+  verifyToken(): Observable<boolean> {
+    return this.http.get<{valid: boolean}>(`${this.API_URL}/verify-token/`)
+      .pipe(
+        tap(response => {
+          if (!response.valid) {
+            this.clearAuthData();
+          }
+        }),
+        map(response => response.valid),
+        catchError(() => {
+          this.clearAuthData();
+          return of(false);
+        })
+      );
+  }
+
+  // Método para limpiar sesión cuando se cierra la pestaña
+  clearSessionOnTabClose(): void {
+    this.clearAuthData();
   }
 }

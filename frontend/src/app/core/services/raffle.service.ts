@@ -163,4 +163,16 @@ export class RaffleService {
   setUserLocation(location: UserLocation): void {
     this.userLocationSubject.next(location);
   }
+
+  getRaffleStatistics(): Observable<{
+    total_active_raffles: number,
+    total_raffles: number,
+    total_tickets_sold: number
+  }> {
+    return this.http.get<{
+      total_active_raffles: number,
+      total_raffles: number,
+      total_tickets_sold: number
+    }>(`${this.API_URL}/statistics/`);
+  }
 }

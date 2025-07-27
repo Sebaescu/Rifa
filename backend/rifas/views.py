@@ -109,9 +109,87 @@ class RaffleListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Raffle.objects.filter(status='active')
         search = self.request.query_params.get('search', None)
+        user_lat = self.request.query_params.get('user_lat')
+        user_lng = self.request.query_params.get('user_lng')
+        
         if search:
             queryset = queryset.filter(name__icontains=search)
+        
+        # Filter raffles based on user location if provided
+        if user_lat and user_lng:
+            queryset = self.filter_by_user_location(queryset, float(user_lat), float(user_lng))
+        
         return queryset
+    
+    def filter_by_user_location(self, queryset, user_lat, user_lng):
+        """Filter raffles based on user's location and raffle scope/allowed_locations"""
+        try:
+            # Get user's location details using reverse geocoding
+            url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={user_lat}&longitude={user_lng}&localityLanguage=es"
+            response = requests.get(url, timeout=5)
+            
+            if response.status_code != 200:
+                print(f"DEBUG: Failed to get user location, showing all raffles")
+                return queryset
+            
+            location_data = response.json()
+            user_country = location_data.get('countryName', '')
+            user_country_code = location_data.get('countryCode', '')
+            user_state = location_data.get('principalSubdivision', '')
+            
+            print(f"DEBUG: User location - Country: {user_country}, State: {user_state}, Country Code: {user_country_code}")
+            
+            filtered_raffle_ids = []
+            
+            for raffle in queryset:
+                should_include = False
+                
+                if raffle.scope == 'international':
+                    # For international raffles, check if user's country is in allowed_locations
+                    if not raffle.allowed_locations.exists():
+                        # No restrictions, include all
+                        should_include = True
+                    else:
+                        # Check if user's country is in allowed locations
+                        for location in raffle.allowed_locations.all():
+                            if (location.country == user_country or 
+                                location.country_code == user_country_code):
+                                should_include = True
+                                break
+                
+                elif raffle.scope == 'national':
+                    # For national raffles, check if user is in the same country
+                    if raffle.allowed_locations.exists():
+                        for location in raffle.allowed_locations.all():
+                            if (location.country == user_country or 
+                                location.country_code == user_country_code):
+                                should_include = True
+                                break
+                    else:
+                        # No restrictions, include for same country users
+                        should_include = True
+                
+                elif raffle.scope == 'provincial':
+                    # For provincial raffles, check if user is in the same state/province
+                    if raffle.allowed_locations.exists():
+                        for location in raffle.allowed_locations.all():
+                            if location.state == user_state:
+                                should_include = True
+                                break
+                    else:
+                        # No restrictions, include for same state users
+                        should_include = True
+                
+                if should_include:
+                    filtered_raffle_ids.append(raffle.id)
+                    
+            print(f"DEBUG: Filtered {len(filtered_raffle_ids)} raffles out of {queryset.count()}")
+            return queryset.filter(id__in=filtered_raffle_ids)
+            
+        except Exception as e:
+            print(f"DEBUG: Error filtering by location: {e}")
+            # If there's an error, return all raffles
+            return queryset
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -388,3 +466,20 @@ def user_tickets(request):
         raffles_data[raffle_name]['tickets'].append(TicketSerializer(ticket).data)
     
     return Response(list(raffles_data.values()))
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def raffle_statistics(request):
+    """Get general raffle statistics"""
+    try:
+        total_active_raffles = Raffle.objects.filter(status='active').count()
+        total_raffles = Raffle.objects.count()
+        total_tickets_sold = Ticket.objects.count()
+        
+        return Response({
+            'total_active_raffles': total_active_raffles,
+            'total_raffles': total_raffles,
+            'total_tickets_sold': total_tickets_sold
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

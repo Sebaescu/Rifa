@@ -56,6 +56,16 @@ def user_logout(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+def verify_token(request):
+    """Verifica si el token del usuario sigue siendo válido"""
+    try:
+        # Si llegamos aquí, el token es válido (pasó por IsAuthenticated)
+        return Response({'valid': True}, status=status.HTTP_200_OK)
+    except:
+        return Response({'valid': False}, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def user_profile(request):
     serializer = CustomUserSerializer(request.user)
     return Response(serializer.data)
