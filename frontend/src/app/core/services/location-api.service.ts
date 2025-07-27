@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export interface Country {
   id: number;
@@ -34,7 +35,7 @@ export interface State {
 })
 export class LocationApiService {
   private readonly apiUrl = 'https://api.countrystatecity.in/v1';
-  private readonly apiKey = 'aTIwT1FYbzZ2emJ5ZEhwSWMwR0tDMzdEMUx0SDRBNzdEV0lDcjF4NA==';
+  private readonly apiKey = environment.locationApiKey;
 
   private httpOptions = {
     headers: new HttpHeaders({

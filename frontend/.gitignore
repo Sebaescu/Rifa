@@ -48,5 +48,8 @@ Thumbs.db
 .env.development
 
 # API Keys and sensitive data
+*.key
+*.pem
+config/secrets.json
 **/environments/environment.ts
 **/environments/environment.prod.ts

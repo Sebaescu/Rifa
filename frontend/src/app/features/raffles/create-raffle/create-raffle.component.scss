@@ -75,12 +75,10 @@
       .hero-title {
         font-size: clamp(2.5rem, 5vw, 4rem);
         font-weight: 800;
-        margin: 0 0 1rem 0;
         color: white;
         text-shadow:
           0 2px 4px rgba(0, 0, 0, 0.8),
           0 0 20px rgba(0, 212, 255, 0.5);
-        // Eliminamos background-clip para evitar problemas de visibilidad
         filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
       }      .hero-subtitle {
         font-size: 1.2rem;
