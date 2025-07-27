@@ -1,0 +1,106 @@
+# Workflow para CI/CD con GitHub Pages
+name: Deploy to GitHub Pages
+
+# Ejecutar cuando:
+on:
+  # Cuando se hace push a main
+  push:
+    branches: [ main ]
+  # Cuando se hace pull request a main
+  pull_request:
+    branches: [ main ]
+  # Permitir ejecución manual desde GitHub
+  workflow_dispatch:
+
+# Configurar permisos para GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evitar ejecuciones concurrentes
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Job 1: Build y Test
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. Checkout del código
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    # 2. Configurar Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    # 3. Instalar dependencias
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    # 4. Lint del código
+    - name: Run linting
+      working-directory: ./frontend
+      run: npm run lint --if-present
+    
+    # 5. Ejecutar tests
+    - name: Run tests
+      working-directory: ./frontend
+      run: npm run test -- --watch=false --browsers=ChromeHeadless
+    
+    # 6. Build para producción
+    - name: Build for production
+      working-directory: ./frontend
+      run: npm run build -- --configuration=production --base-href="/Rifa/"
+      env:
+        # Variables de entorno para producción
+        LOCATION_API_KEY: ${{ secrets.LOCATION_API_KEY }}
+    
+    # 7. Subir artefactos del build
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-files
+        path: frontend/dist/
+        retention-days: 1
+
+  # Job 2: Deploy a GitHub Pages (solo en main)
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    # 1. Descargar artefactos del build
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-files
+        path: ./dist
+    
+    # 2. Configurar Pages
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    # 3. Subir a Pages
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./dist
+    
+    # 4. Deploy a Pages
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

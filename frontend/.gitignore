@@ -51,5 +51,5 @@ Thumbs.db
 *.key
 *.pem
 config/secrets.json
-**/environments/environment.ts
-**/environments/environment.prod.ts
+# Note: environment.ts and environment.prod.ts should be in repo
+# but with placeholder values, real secrets go in GitHub Secrets
