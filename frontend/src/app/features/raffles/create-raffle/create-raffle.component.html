@@ -342,7 +342,7 @@
           </div>
 
           <!-- Upload Area -->
-          <div class="upload-area" *ngIf="!imagePreview">
+          <div class="upload-area" *ngIf="!imagePreview" (click)="onSelectImage()">
             <mat-icon class="upload-icon">cloud_upload</mat-icon>
             <p class="upload-text">Arrastra una imagen aquí o haz clic para seleccionar</p>
             <p class="upload-hint">PNG, JPG hasta 5MB</p>
@@ -353,14 +353,6 @@
                  accept="image/*"
                  (change)="onImageSelected($event)"
                  style="display: none;">
-
-          <button type="button"
-                  mat-stroked-button
-                  color="primary"
-                  (click)="onSelectImage()">
-            <mat-icon>add_photo_alternate</mat-icon>
-            {{ imagePreview ? 'Cambiar Imagen' : 'Seleccionar Imagen' }}
-          </button>
         </div>
       </div>
 

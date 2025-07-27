@@ -307,96 +307,76 @@ export class CreateRaffleComponent implements OnInit {
     if (this.raffleForm.valid) {
       this.isLoading = true;
 
-      const formData = new FormData();
       const formValues = this.raffleForm.value;
 
-      // Agregar los campos básicos del formulario
-      formData.append('name', formValues.name);
-      formData.append('description', formValues.description);
-      formData.append('terms_conditions', formValues.terms_conditions);
-      formData.append('ticket_price', formValues.ticket_price.toString());
-      formData.append('total_tickets', formValues.total_tickets.toString());
-      formData.append('start_date', formValues.start_date);
-      formData.append('end_date', formValues.end_date);
-      formData.append('scope', formValues.scope);
-
-      // Agregar ubicaciones permitidas según el scope
-      const allowedLocations: any[] = [];
-
-      switch (formValues.scope) {
-        case 'national':
-          const selectedCountry = this.availableCountries.find(c => c.iso2 === formValues.selectedCountry);
-          if (selectedCountry) {
-            allowedLocations.push({
-              country_code: selectedCountry.iso2,
-              country_name: selectedCountry.name,
-              type: 'country'
-            });
-          }
-          break;
-
-        case 'provincial':
-          const selectedStates = this.getSelectedStates();
-          selectedStates.forEach(state => {
-            allowedLocations.push({
-              country_code: state.country_code,
-              country_name: state.country_name,
-              state_code: state.state_code,
-              state_name: state.name,
-              type: 'state'
-            });
-          });
-          break;
-
-        case 'international':
-          const selectedCountries = this.getSelectedCountries();
-          selectedCountries.forEach(country => {
-            allowedLocations.push({
-              country_code: country.iso2,
-              country_name: country.name,
-              type: 'country'
-            });
-          });
-          break;
-      }
-
-      formData.append('allowed_locations', JSON.stringify(allowedLocations));
-
-      // Agregar la imagen si existe
-      if (this.selectedImage) {
-        formData.append('image', this.selectedImage);
-      }
-
-      // Simular creación de rifa (reemplazar con llamada real al servicio)
-      setTimeout(() => {
-        this.isLoading = false;
-        this.snackBar.open('¡Rifa creada exitosamente!', 'Cerrar', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
-        this.router.navigate(['/dashboard']);
-      }, 2000);
-
-      /*
-      // Llamada real al servicio (descomentar cuando esté implementado)
-      this.raffleService.createRaffle(formData).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          this.snackBar.open('¡Rifa creada exitosamente!', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.router.navigate(['/raffles', response.id]);
-        },
-        error: (error) => {
-          this.isLoading = false;
-          this.snackBar.open('Error al crear la rifa. Intenta nuevamente.', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['error-snackbar']
-          });
+      // Formatear fechas correctamente
+      const formatDate = (date: any): string => {
+        if (date instanceof Date) {
+          return date.toISOString();
         }
-      });
-      */
+        if (typeof date === 'string') {
+          // Si ya es string, asegurar que está en formato ISO
+          return new Date(date).toISOString();
+        }
+        return date;
+      };
+
+      // Validar que tenemos datos correctos antes de enviar
+      const allowedLocations = this.getAllowedLocations(formValues);
+      console.log('Scope:', formValues.scope);
+      console.log('Selected country:', formValues.selectedCountry);
+      console.log('Selected countries count:', this.getSelectedCountries().length);
+      console.log('Selected states count:', this.getSelectedStates().length);
+      console.log('Allowed locations:', allowedLocations);
+
+      if (allowedLocations.length === 0) {
+        this.isLoading = false;
+        this.snackBar.open('Debes seleccionar al menos una ubicación según el alcance elegido.', 'Cerrar', {
+          duration: 3000,
+          panelClass: ['warning-snackbar']
+        });
+        return;
+      }
+
+      // Crear el objeto de solicitud según la interfaz
+      const createRaffleRequest: any = {
+        name: formValues.name,
+        description: formValues.description,
+        terms_conditions: formValues.terms_conditions,
+        ticket_price: parseFloat(formValues.ticket_price),
+        total_tickets: parseInt(formValues.total_tickets, 10),
+        start_date: formatDate(formValues.start_date),
+        end_date: formatDate(formValues.end_date),
+        scope: formValues.scope,
+        allowed_locations: allowedLocations
+      };
+
+      // Procesar la imagen si existe
+      if (this.selectedImage) {
+        console.log('DEBUG: Processing image:', this.selectedImage.name, 'Size:', this.selectedImage.size);
+        // Convertir imagen a base64
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          const base64String = e.target.result;
+          console.log('DEBUG: Base64 conversion completed. Length:', base64String ? base64String.length : 0);
+          createRaffleRequest.image_base64 = base64String;
+          createRaffleRequest.image_name = this.selectedImage!.name;
+
+          // Enviar la solicitud con imagen
+          console.log('DEBUG: Sending request with image');
+          this.sendRaffleRequest(createRaffleRequest);
+        };
+        reader.onerror = (error) => {
+          console.error('ERROR: FileReader error:', error);
+          // Enviar sin imagen en caso de error
+          this.sendRaffleRequest(createRaffleRequest);
+        };
+        reader.readAsDataURL(this.selectedImage);
+      } else {
+        console.log('DEBUG: No image selected, sending without image');
+        // Enviar sin imagen
+        this.sendRaffleRequest(createRaffleRequest);
+      }
     } else {
       this.markFormGroupTouched();
       this.snackBar.open('Por favor, completa todos los campos requeridos', 'Cerrar', {
@@ -404,6 +384,91 @@ export class CreateRaffleComponent implements OnInit {
         panelClass: ['warning-snackbar']
       });
     }
+  }
+
+  private sendRaffleRequest(createRaffleRequest: any): void {
+    // Debug: Log de los datos que se van a enviar
+    console.log('DEBUG: Final request data:', {
+      ...createRaffleRequest,
+      image_base64: createRaffleRequest.image_base64 ? `Base64 data (${createRaffleRequest.image_base64.length} chars)` : 'No image',
+      image_name: createRaffleRequest.image_name || 'No image name'
+    });
+
+    // Llamada real al servicio
+    this.raffleService.createRaffle(createRaffleRequest).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        console.log('Raffle created successfully:', response);
+        this.snackBar.open('¡Rifa creada exitosamente!', 'Cerrar', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+        this.router.navigate(['/manage-raffles']);
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Error creating raffle:', error);
+        console.error('Error details:', error.error);
+        console.error('Error message:', error.message);
+        console.error('Error status:', error.status);
+
+        // Log detailed error information
+        if (error.error) {
+          console.error('Full error object:', JSON.stringify(error.error, null, 2));
+          Object.keys(error.error).forEach(key => {
+            console.error(`Error field ${key}:`, error.error[key]);
+          });
+        }
+
+        this.snackBar.open('Error al crear la rifa. Revisa la consola para más detalles.', 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  private getAllowedLocations(formValues: any): any[] {
+    const allowedLocations: any[] = [];
+
+    switch (formValues.scope) {
+      case 'national':
+        const selectedCountry = this.availableCountries.find(c => c.iso2 === formValues.selectedCountry);
+        if (selectedCountry) {
+          allowedLocations.push({
+            country_code: selectedCountry.iso2,
+            country_name: selectedCountry.name,
+            type: 'country'
+          });
+        }
+        break;
+
+      case 'provincial':
+        const selectedStates = this.getSelectedStates();
+        selectedStates.forEach(state => {
+          allowedLocations.push({
+            country_code: state.country_code,
+            country_name: state.country_name,
+            state_code: state.state_code,
+            state_name: state.name,
+            type: 'state'
+          });
+        });
+        break;
+
+      case 'international':
+        const selectedCountries = this.getSelectedCountries();
+        selectedCountries.forEach(country => {
+          allowedLocations.push({
+            country_code: country.iso2,
+            country_name: country.name,
+            type: 'country'
+          });
+        });
+        break;
+    }
+
+    return allowedLocations;
   }
 
   private markFormGroupTouched(): void {

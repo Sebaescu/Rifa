@@ -12,6 +12,7 @@ urlpatterns = [
     # Raffle URLs
     path('raffles/', views.RaffleListView.as_view(), name='raffle_list'),
     path('raffles/create/', views.RaffleCreateView.as_view(), name='raffle_create'),
+    path('raffles/my-raffles/', views.UserRafflesView.as_view(), name='user_raffles'),
     path('raffles/<int:pk>/', views.RaffleDetailView.as_view(), name='raffle_detail'),
     path('raffles/<int:raffle_id>/tickets/', views.raffle_tickets, name='raffle_tickets'),
     

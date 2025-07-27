@@ -68,6 +68,43 @@ import { User } from '../../../shared/models/user.model';
         </div>
       </div>
 
+      <!-- Filters and Search -->
+      <div *ngIf="!isLoading && userRaffles.length > 0" class="filters-section">
+        <div class="filters-container">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar rifas</mat-label>
+            <input matInput placeholder="Nombre de la rifa..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="statusFilter" (selectionChange)="applyFilters()">
+              <mat-option value="">Todos</mat-option>
+              <mat-option value="active">Activas</mat-option>
+              <mat-option value="completed">Completadas</mat-option>
+              <mat-option value="inactive">Inactivas</mat-option>
+              <mat-option value="cancelled">Canceladas</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Ordenar por</mat-label>
+            <mat-select [(ngModel)]="sortBy" (selectionChange)="applyFilters()">
+              <mat-option value="created_at">Fecha de creación</mat-option>
+              <mat-option value="name">Nombre</mat-option>
+              <mat-option value="end_date">Fecha de finalización</mat-option>
+              <mat-option value="tickets_sold">Tickets vendidos</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-button color="primary" (click)="clearFilters()">
+            <mat-icon>clear</mat-icon>
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+
       <!-- Empty State -->
       <div *ngIf="!isLoading && filteredRaffles.length === 0" class="empty-state">
         <div class="empty-icon">
@@ -85,7 +122,7 @@ import { User } from '../../../shared/models/user.model';
       <div *ngIf="!isLoading && filteredRaffles.length > 0" class="raffles-grid">
         <div *ngFor="let raffle of filteredRaffles" class="raffle-card">
           <div class="raffle-image">
-            <img [src]="raffle.image || '/assets/images/default-raffle.jpg'" [alt]="raffle.name">
+            <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name">
             <div class="raffle-status" [class]="raffle.status">
               {{ getStatusText(raffle.status) }}
             </div>
@@ -94,7 +131,7 @@ import { User } from '../../../shared/models/user.model';
           <div class="raffle-content">
             <h3 class="raffle-title">{{ raffle.name }}</h3>
             <p class="raffle-description">{{ raffle.description | slice:0:100 }}{{ raffle.description.length > 100 ? '...' : '' }}</p>
-            
+
             <div class="raffle-details">
               <div class="detail-item">
                 <mat-icon>monetization_on</mat-icon>
@@ -115,8 +152,8 @@ import { User } from '../../../shared/models/user.model';
                 <span>Vendidos: {{ raffle.tickets_sold }}/{{ raffle.total_tickets }}</span>
                 <span>{{ getProgressPercentage(raffle) }}%</span>
               </div>
-              <mat-progress-bar 
-                mode="determinate" 
+              <mat-progress-bar
+                mode="determinate"
                 [value]="getProgressPercentage(raffle)"
                 class="progress-bar">
               </mat-progress-bar>
@@ -149,6 +186,11 @@ export class ManageRafflesComponent implements OnInit {
   currentUser: User | null = null;
   isLoading = true;
 
+  // Filter properties
+  searchTerm = '';
+  statusFilter = '';
+  sortBy = 'created_at';
+
   constructor(
     private raffleService: RaffleService,
     private authService: AuthService
@@ -167,12 +209,21 @@ export class ManageRafflesComponent implements OnInit {
 
   loadUserRaffles(): void {
     this.isLoading = true;
-    
-    setTimeout(() => {
-      this.userRaffles = this.getMockRaffles();
-      this.filteredRaffles = [...this.userRaffles];
-      this.isLoading = false;
-    }, 1000);
+
+    this.raffleService.getUserRaffles().subscribe({
+      next: (response) => {
+        this.userRaffles = response.results;
+        this.applyFilters();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading user raffles:', error);
+        this.isLoading = false;
+        // Fallback to mock data if API fails
+        this.userRaffles = this.getMockRaffles();
+        this.applyFilters();
+      }
+    });
   }
 
   getMockRaffles(): Raffle[] {
@@ -220,7 +271,7 @@ export class ManageRafflesComponent implements OnInit {
         created_at: '2024-10-15T10:00:00Z',
         updated_at: '2024-11-30T10:00:00Z',
         image: '/assets/images/ps5.jpg',
-        scope: 'state',
+        scope: 'provincial',
         allowed_locations: []
       }
     ];
@@ -261,9 +312,73 @@ export class ManageRafflesComponent implements OnInit {
   }
 
   deleteRaffle(raffle: Raffle): void {
-    console.log('Eliminando rifa:', raffle.name);
-    this.userRaffles = this.userRaffles.filter(r => r.id !== raffle.id);
-    this.filteredRaffles = this.filteredRaffles.filter(r => r.id !== raffle.id);
-    alert('Rifa eliminada exitosamente');
+    this.raffleService.deleteRaffle(raffle.id).subscribe({
+      next: () => {
+        this.userRaffles = this.userRaffles.filter(r => r.id !== raffle.id);
+        this.filteredRaffles = this.filteredRaffles.filter(r => r.id !== raffle.id);
+        alert('Rifa eliminada exitosamente');
+      },
+      error: (error) => {
+        console.error('Error deleting raffle:', error);
+        alert('Error al eliminar la rifa. Por favor, inténtalo de nuevo.');
+      }
+    });
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.userRaffles];
+
+    // Filter by search term
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(raffle =>
+        raffle.name.toLowerCase().includes(term) ||
+        raffle.description.toLowerCase().includes(term)
+      );
+    }
+
+    // Filter by status
+    if (this.statusFilter) {
+      filtered = filtered.filter(raffle => raffle.status === this.statusFilter);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      switch (this.sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'end_date':
+          return new Date(a.end_date).getTime() - new Date(b.end_date).getTime();
+        case 'tickets_sold':
+          return b.tickets_sold - a.tickets_sold;
+        case 'created_at':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    this.filteredRaffles = filtered;
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = '';
+    this.sortBy = 'created_at';
+    this.applyFilters();
+  }
+
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) {
+      return '/assets/images/default-raffle.jpg';
+    }
+
+    // Si la URL ya es completa (comienza con http), devolverla tal como está
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+
+    // Si es una URL relativa, construir la URL completa
+    const baseUrl = 'http://localhost:8000';
+    return `${baseUrl}${imageUrl}`;
   }
 }

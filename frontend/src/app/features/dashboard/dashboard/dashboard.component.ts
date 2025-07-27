@@ -61,10 +61,10 @@ export class DashboardComponent implements OnInit {
   private organizeRafflesByLocation(raffles: Raffle[]): void {
     const activeRaffles = raffles.filter(r => r.status === 'active');
 
-    this.localRaffles = activeRaffles.filter(r => r.scope === 'local')
+    this.localRaffles = activeRaffles.filter(r => r.scope === 'provincial')
       .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
 
-    this.stateRaffles = activeRaffles.filter(r => r.scope === 'state')
+    this.stateRaffles = activeRaffles.filter(r => r.scope === 'provincial')
       .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
 
     this.nationalRaffles = activeRaffles.filter(r => r.scope === 'national')
@@ -120,7 +120,7 @@ export class DashboardComponent implements OnInit {
         image: EXAMPLE_RAFFLE_IMAGES.iphone15,
         tickets_available: 75,
         tickets_sold: 25,
-        scope: 'local',
+        scope: 'provincial',
         allowed_locations: [],
         distance_km: 2.5
       },
@@ -139,7 +139,7 @@ export class DashboardComponent implements OnInit {
         image: EXAMPLE_RAFFLE_IMAGES.spark,
         tickets_available: 320,
         tickets_sold: 180,
-        scope: 'local',
+        scope: 'provincial',
         allowed_locations: [],
         distance_km: 5.2
       },

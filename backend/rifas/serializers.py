@@ -2,6 +2,9 @@ from rest_framework import serializers
 from .models import Raffle, Ticket, Cart, CartItem, Order, OrderItem, Location
 from accounts.serializers import CustomUserSerializer
 import math
+import json
+import base64
+from django.core.files.base import ContentFile
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -75,16 +78,48 @@ class RaffleSerializer(serializers.ModelSerializer):
         return round(distance, 2)
 
 class RaffleCreateSerializer(serializers.ModelSerializer):
-    allowed_locations = serializers.JSONField(write_only=True, required=False)
+    allowed_locations = serializers.ListField(write_only=True, required=False)
+    image_base64 = serializers.CharField(write_only=True, required=False)
+    image_name = serializers.CharField(write_only=True, required=False)
     
     class Meta:
         model = Raffle
         fields = ['name', 'description', 'ticket_price', 'total_tickets',
                  'start_date', 'end_date', 'image', 'terms_conditions', 
-                 'scope', 'allowed_locations']
+                 'scope', 'allowed_locations', 'image_base64', 'image_name']
     
     def create(self, validated_data):
+        print(f"DEBUG: Creating raffle with validated_data keys: {list(validated_data.keys())}")
+        
         allowed_locations_data = validated_data.pop('allowed_locations', [])
+        image_base64 = validated_data.pop('image_base64', None)
+        image_name = validated_data.pop('image_name', None)
+        
+        print(f"DEBUG: Image base64 present: {bool(image_base64)}")
+        print(f"DEBUG: Image base64 length: {len(image_base64) if image_base64 else 0}")
+        print(f"DEBUG: Image name: {image_name}")
+        
+        # Process base64 image if provided
+        if image_base64 and image_name:
+            try:
+                print(f"DEBUG: Processing base64 image...")
+                # Extract the base64 content (remove data:image/...;base64, prefix)
+                format, imgstr = image_base64.split(';base64,')
+                ext = format.split('/')[-1]
+                print(f"DEBUG: Image format: {format}, extension: {ext}")
+                
+                # Create Django file from base64
+                image_data = base64.b64decode(imgstr)
+                print(f"DEBUG: Decoded image data length: {len(image_data)}")
+                validated_data['image'] = ContentFile(image_data, name=image_name)
+                print(f"DEBUG: Image file created successfully")
+            except Exception as e:
+                print(f"ERROR processing image: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"DEBUG: No image data provided")
+        
         validated_data['created_by'] = self.context['request'].user
         
         raffle = super().create(validated_data)

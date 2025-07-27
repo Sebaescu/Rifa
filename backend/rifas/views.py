@@ -127,6 +127,23 @@ class RaffleCreateView(generics.CreateAPIView):
     queryset = Raffle.objects.all()
     serializer_class = RaffleCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        print(f"DEBUG: Request method: {request.method}")
+        print(f"DEBUG: Content type: {request.content_type}")
+        print(f"DEBUG: Request data: {request.data}")
+        print(f"DEBUG: Request FILES: {request.FILES}")
+        print(f"DEBUG: User authenticated: {request.user.is_authenticated}")
+        print(f"DEBUG: User: {request.user}")
+        
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            print(f"DEBUG: Exception in create: {e}")
+            print(f"DEBUG: Exception type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
 
 class RaffleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Raffle.objects.all()
@@ -149,6 +166,14 @@ class RaffleDetailView(generics.RetrieveUpdateDestroyAPIView):
         if instance.created_by != self.request.user:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         instance.delete()
+
+class UserRafflesView(generics.ListAPIView):
+    """Get raffles created by the current user"""
+    serializer_class = RaffleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Raffle.objects.filter(created_by=self.request.user).order_by('-created_at')
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])

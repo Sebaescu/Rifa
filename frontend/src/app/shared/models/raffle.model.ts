@@ -31,7 +31,7 @@ export interface Raffle {
   tickets_available: number;
   tickets_sold: number;
   // Geolocalización
-  scope: 'local' | 'state' | 'national' | 'international';
+  scope: 'provincial' | 'national' | 'international';
   allowed_locations: Location[];
   distance_km?: number; // Distancia calculada desde la ubicación del usuario
 }
@@ -58,9 +58,11 @@ export interface CreateRaffleRequest {
   start_date: string;
   end_date: string;
   image?: File;
+  image_base64?: string;
+  image_name?: string;
   terms_conditions?: string;
-  scope: 'local' | 'state' | 'national' | 'international';
-  allowed_location_ids: number[];
+  scope: 'provincial' | 'national' | 'international';
+  allowed_locations: any[];
 }
 
 export interface UserLocation {

@@ -39,21 +39,28 @@ export class RaffleService {
     return this.http.get<RaffleDetail>(`${this.API_URL}/raffles/${id}/`);
   }
 
-  createRaffle(data: CreateRaffleRequest): Observable<Raffle> {
-    const formData = new FormData();
+  createRaffle(data: any): Observable<Raffle> {
+    console.log('RaffleService - Original data:', data);
 
-    Object.keys(data).forEach(key => {
-      const value = (data as any)[key];
-      if (value !== undefined && value !== null) {
-        if (key === 'image' && value instanceof File) {
-          formData.append(key, value);
-        } else {
-          formData.append(key, value.toString());
-        }
-      }
-    });
+    // For now, let's try pure JSON instead of FormData
+    const requestData = {
+      name: data.name,
+      description: data.description,
+      terms_conditions: data.terms_conditions,
+      ticket_price: data.ticket_price,
+      total_tickets: data.total_tickets,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      scope: data.scope,
+      allowed_locations: data.allowed_locations,
+      // Include image fields if they exist
+      ...(data.image_base64 && { image_base64: data.image_base64 }),
+      ...(data.image_name && { image_name: data.image_name })
+    };
 
-    return this.http.post<Raffle>(`${this.API_URL}/raffles/create/`, formData);
+    console.log('RaffleService - Sending JSON data:', requestData);
+
+    return this.http.post<Raffle>(`${this.API_URL}/raffles/create/`, requestData);
   }
 
   updateRaffle(id: number, data: Partial<CreateRaffleRequest>): Observable<Raffle> {
@@ -75,6 +82,10 @@ export class RaffleService {
 
   deleteRaffle(id: number): Observable<any> {
     return this.http.delete(`${this.API_URL}/raffles/${id}/`);
+  }
+
+  getUserRaffles(): Observable<{count: number, results: Raffle[]}> {
+    return this.http.get<{count: number, results: Raffle[]}>(`${this.API_URL}/raffles/my-raffles/`);
   }
 
   getRaffleTickets(raffleId: number): Observable<Ticket[]> {
