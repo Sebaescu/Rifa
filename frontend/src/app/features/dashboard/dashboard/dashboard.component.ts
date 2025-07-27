@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { RaffleService } from '../../../core/services/raffle.service';
+import { StatisticsService } from '../../../core/services/statistics.service';
 import { Raffle, UserLocation } from '../../../shared/models/raffle.model';
 import { EXAMPLE_RAFFLE_IMAGES } from '../../../../assets/images/raffles/examples/raffle-images.constants';
 
@@ -10,26 +12,43 @@ import { EXAMPLE_RAFFLE_IMAGES } from '../../../../assets/images/raffles/example
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   localRaffles: Raffle[] = [];
   stateRaffles: Raffle[] = [];
   nationalRaffles: Raffle[] = [];
   internationalRaffles: Raffle[] = [];
   isLoading = true;
+  isRefreshingLocation = false;
   userLocation: UserLocation | null = null;
   totalActiveRaffles = 0;
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private raffleService: RaffleService,
+    private statisticsService: StatisticsService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     // Suscribirse a la ubicación del usuario
-    this.raffleService.userLocation$.subscribe(location => {
+    const locationSub = this.raffleService.userLocation$.subscribe(location => {
       this.userLocation = location;
       this.loadRaffles();
     });
+    this.subscriptions.push(locationSub);
+
+    // Suscribirse a las estadísticas de StatisticsService
+    const statsSub = this.statisticsService.statistics$.subscribe(stats => {
+      this.totalActiveRaffles = stats.total_active_raffles;
+    });
+    this.subscriptions.push(statsSub);
+
+    // Cargar estadísticas iniciales
+    this.statisticsService.forceRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   loadRaffles(): void {
@@ -273,5 +292,18 @@ export class DashboardComponent implements OnInit {
         allowed_locations: []
       }
     ];
+  }
+
+  refreshLocation(): void {
+    console.log('Dashboard: Refreshing user location...');
+    this.isRefreshingLocation = true;
+
+    // Forzar la detección de ubicación nuevamente
+    this.raffleService.forceLocationRefresh();
+
+    // Simular que termina después de un tiempo mínimo para mostrar la animación
+    setTimeout(() => {
+      this.isRefreshingLocation = false;
+    }, 2000);
   }
 }

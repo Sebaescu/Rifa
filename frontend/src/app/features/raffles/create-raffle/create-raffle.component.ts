@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { RaffleService } from '../../../core/services/raffle.service';
+import { StatisticsService } from '../../../core/services/statistics.service';
 import { LocationApiService, Country, State } from '../../../core/services/location-api.service';
 @Component({
   selector: 'app-create-raffle',
@@ -41,6 +42,7 @@ export class CreateRaffleComponent implements OnInit {
     private router: Router,
     private snackBar: MatSnackBar,
     private raffleService: RaffleService,
+    private statisticsService: StatisticsService,
     private locationApiService: LocationApiService
   ) {}
 
@@ -399,6 +401,10 @@ export class CreateRaffleComponent implements OnInit {
       next: (response) => {
         this.isLoading = false;
         console.log('Raffle created successfully:', response);
+
+        // Actualizar estadísticas después de crear la rifa
+        this.statisticsService.forceRefresh();
+
         this.snackBar.open('¡Rifa creada exitosamente!', 'Cerrar', {
           duration: 3000,
           panelClass: ['success-snackbar']

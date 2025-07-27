@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
-import { RaffleService } from '../../../core/services/raffle.service';
+import { StatisticsService } from '../../../core/services/statistics.service';
 import { User } from '../../models/user.model';
 
 @Component({
@@ -723,7 +724,7 @@ export class NavbarComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private cartService: CartService,
-    private raffleService: RaffleService
+    private statisticsService: StatisticsService
   ) {}
 
   ngOnInit() {
@@ -739,13 +740,26 @@ export class NavbarComponent implements OnInit {
     // Subscribe to authentication changes
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      // Cargar estadísticas cuando el usuario cambia
+      if (user) {
+        this.loadActiveRafflesCount();
+      }
     });
 
-    // Listen to router events to detect auth routes
+    // Subscribe to statistics changes
+    this.statisticsService.statistics$.subscribe(stats => {
+      this.activeRafflesCount = stats.total_active_raffles;
+    });
+
+    // Listen to router events to detect auth routes and refresh statistics
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
         this.checkAuthRoute();
+        // Actualizar estadísticas en cada navegación
+        if (this.currentUser) {
+          this.statisticsService.forceRefresh();
+        }
         // Close mobile menu when route changes
         if (this.isMobileMenuOpen) {
           this.isMobileMenuOpen = false;
@@ -772,8 +786,8 @@ export class NavbarComponent implements OnInit {
   }
 
   private loadActiveRafflesCount() {
-    // Obtener estadísticas reales del backend
-    this.raffleService.getRaffleStatistics().subscribe({
+    // Obtener estadísticas reales del backend usando el StatisticsService
+    this.statisticsService.refreshStatistics().subscribe({
       next: (stats) => {
         this.activeRafflesCount = stats.total_active_raffles;
       },

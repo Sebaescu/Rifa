@@ -119,6 +119,32 @@
   color: #ffd700;
 }
 
+.refresh-location-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+  width: 32px !important;
+  height: 32px !important;
+
+  &:hover {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .hero-subtitle {
   font-size: 1.2rem;
   font-weight: 400;

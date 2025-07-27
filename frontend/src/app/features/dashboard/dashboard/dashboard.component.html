@@ -13,6 +13,13 @@
       <div class="location-badge" *ngIf="userLocation">
         <mat-icon>location_on</mat-icon>
         <span>{{ userLocation.city }}, {{ userLocation.state }}, {{ userLocation.country }}</span>
+        <button mat-icon-button
+                (click)="refreshLocation()"
+                [disabled]="isRefreshingLocation"
+                matTooltip="Actualizar ubicación"
+                class="refresh-location-btn">
+          <mat-icon [class.spinning]="isRefreshingLocation">refresh</mat-icon>
+        </button>
       </div>
       <p class="hero-subtitle">Descubre rifas increíbles y gana premios extraordinarios</p>
     </div>

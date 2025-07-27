@@ -98,36 +98,50 @@ export class RaffleService {
   }
 
   detectUserLocation(): void {
+    console.log('RaffleService: Starting location detection...');
+
     if (navigator.geolocation) {
+      console.log('RaffleService: Requesting GPS location...');
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          this.getLocationFromCoordinates(latitude, longitude).subscribe(
-            (location) => {
+          console.log('RaffleService: GPS location obtained:', { latitude, longitude });
+
+          this.getLocationFromCoordinates(latitude, longitude).subscribe({
+            next: (location) => {
+              console.log('RaffleService: Location from coordinates:', location);
               this.userLocationSubject.next({
                 ...location,
                 latitude,
                 longitude
               });
             },
-            (error) => {
-              console.error('Error getting location from coordinates:', error);
-              // Fallback: detectar ubicación por IP
-              this.detectLocationByIP();
+            error: (error) => {
+              console.error('RaffleService: Error getting location from coordinates:', error);
+              this.detectLocationByExternalIP();
             }
-          );
+          });
         },
         (error) => {
-          console.error('Error getting geolocation:', error);
-          // Fallback: detectar ubicación por IP
-          this.detectLocationByIP();
+          console.log('RaffleService: GPS not available or denied:', error.message);
+          this.detectLocationByExternalIP();
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 600000 // 10 minutos
         }
       );
     } else {
-      console.log('Geolocation is not supported by this browser');
-      // Fallback: detectar ubicación por IP
-      this.detectLocationByIP();
+      console.log('RaffleService: Geolocation not supported');
+      this.detectLocationByExternalIP();
     }
+  }
+
+  // Método público para forzar la detección de ubicación
+  forceLocationRefresh(): void {
+    console.log('RaffleService: Forcing location refresh...');
+    this.detectUserLocation();
   }
 
   private getLocationFromCoordinates(lat: number, lng: number): Observable<UserLocation> {
@@ -136,13 +150,49 @@ export class RaffleService {
     });
   }
 
+  private detectLocationByExternalIP(): void {
+    console.log('RaffleService: Detecting location by external IP...');
+
+    // Usar un servicio externo para obtener la IP pública y la ubicación
+    this.http.get<any>('https://ipapi.co/json/').subscribe({
+      next: (data) => {
+        console.log('RaffleService: External IP location data:', data);
+
+        if (data && data.city && data.country_name) {
+          const location: UserLocation = {
+            country: data.country_name,
+            country_code: data.country_code,
+            state: data.region,
+            city: data.city,
+            latitude: parseFloat(data.latitude),
+            longitude: parseFloat(data.longitude)
+          };
+
+          console.log('RaffleService: Setting external IP location:', location);
+          this.userLocationSubject.next(location);
+        } else {
+          console.log('RaffleService: Invalid external IP data, trying backend fallback');
+          this.detectLocationByIP();
+        }
+      },
+      error: (error) => {
+        console.error('RaffleService: Error with external IP service:', error);
+        console.log('RaffleService: Trying backend IP detection...');
+        this.detectLocationByIP();
+      }
+    });
+  }
+
   private detectLocationByIP(): void {
-    this.http.get<UserLocation>(`${this.API_URL}/location/by-ip/`).subscribe(
-      (location) => {
+    console.log('RaffleService: Using backend IP detection...');
+    this.http.get<UserLocation>(`${this.API_URL}/location/by-ip/`).subscribe({
+      next: (location) => {
+        console.log('RaffleService: Backend IP location:', location);
         this.userLocationSubject.next(location);
       },
-      (error) => {
-        console.error('Error detecting location by IP:', error);
+      error: (error) => {
+        console.error('RaffleService: Error detecting location by IP:', error);
+        console.log('RaffleService: Using fallback location (Ecuador)');
         // Ubicación por defecto (Ecuador - Guayaquil)
         this.userLocationSubject.next({
           country: 'Ecuador',
@@ -153,7 +203,7 @@ export class RaffleService {
           longitude: -79.922359
         });
       }
-    );
+    });
   }
 
   getUserLocation(): UserLocation | null {
