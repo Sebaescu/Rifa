@@ -75,26 +75,34 @@ class RaffleSerializer(serializers.ModelSerializer):
         return round(distance, 2)
 
 class RaffleCreateSerializer(serializers.ModelSerializer):
-    allowed_location_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        required=False
-    )
+    allowed_locations = serializers.JSONField(write_only=True, required=False)
     
     class Meta:
         model = Raffle
         fields = ['name', 'description', 'ticket_price', 'total_tickets',
                  'start_date', 'end_date', 'image', 'terms_conditions', 
-                 'scope', 'allowed_location_ids']
+                 'scope', 'allowed_locations']
     
     def create(self, validated_data):
-        allowed_location_ids = validated_data.pop('allowed_location_ids', [])
+        allowed_locations_data = validated_data.pop('allowed_locations', [])
         validated_data['created_by'] = self.context['request'].user
         
         raffle = super().create(validated_data)
         
-        if allowed_location_ids:
-            locations = Location.objects.filter(id__in=allowed_location_ids)
+        # Process allowed_locations from frontend
+        if allowed_locations_data:
+            locations = []
+            for location_data in allowed_locations_data:
+                location, created = Location.objects.get_or_create(
+                    country=location_data.get('country_name', ''),
+                    country_code=location_data.get('country_code', ''),
+                    state=location_data.get('state_name', '') if location_data.get('type') == 'state' else '',
+                    defaults={
+                        'city': '',  # No city for country/state level
+                    }
+                )
+                locations.append(location)
+            
             raffle.allowed_locations.set(locations)
         
         return raffle

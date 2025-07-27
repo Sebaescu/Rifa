@@ -33,8 +33,7 @@ class Raffle(models.Model):
     ]
     
     SCOPE_CHOICES = [
-        ('local', 'Local'),
-        ('state', 'State/Provincial'),
+        ('provincial', 'Provincial'),
         ('national', 'National'),
         ('international', 'International'),
     ]
@@ -53,7 +52,7 @@ class Raffle(models.Model):
     terms_conditions = models.TextField(blank=True)
     
     # Geolocation fields
-    scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='local')
+    scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='provincial')
     allowed_locations = models.ManyToManyField(Location, blank=True, related_name='raffles')
     
     def __str__(self):
@@ -96,12 +95,7 @@ class Raffle(models.Model):
             return True  # No restrictions
         
         for location in allowed_locations:
-            if self.scope == 'local':
-                if (location.city == user_location.get('city') and 
-                    location.state == user_location.get('state') and 
-                    location.country == user_location.get('country')):
-                    return True
-            elif self.scope == 'state':
+            if self.scope == 'provincial':
                 if (location.state == user_location.get('state') and 
                     location.country == user_location.get('country')):
                     return True
