@@ -123,6 +123,50 @@ export class MyRafflesComponent implements OnInit {
     }, 0);
   }
 
+  // Verificar si el usuario ganó la rifa
+  isWinner(raffleGroup: any): boolean {
+    const raffle = raffleGroup.raffle;
+    const userTickets = raffleGroup.tickets;
+
+    // Si la rifa no está completada o no tiene ganador, retornar false
+    if (raffle?.status !== 'completed' || !raffle?.winner_ticket) {
+      return false;
+    }
+
+    // Verificar si alguno de los tickets del usuario es el ganador
+    return userTickets.some((ticket: any) => ticket.number === raffle.winner_ticket);
+  }
+
+  // Obtener el mensaje apropiado para mostrar en la sección de premio
+  getPrizeStatus(raffleGroup: any): string {
+    const raffle = raffleGroup.raffle;
+
+    if (raffle?.status !== 'completed') {
+      return 'Premio';
+    }
+
+    if (this.isWinner(raffleGroup)) {
+      return '🎉 ¡Ganador!';
+    } else {
+      return '😔 Sin suerte';
+    }
+  }
+
+  // Obtener el mensaje descriptivo
+  getPrizeMessage(raffleGroup: any): string {
+    const raffle = raffleGroup.raffle;
+
+    if (raffle?.status !== 'completed') {
+      return raffle?.name || 'Premio por definir';
+    }
+
+    if (this.isWinner(raffleGroup)) {
+      return `¡Felicidades! Ganaste: ${raffle?.name}`;
+    } else {
+      return `Número ganador: #${raffle?.winner_ticket} - ${raffle?.winner_name}`;
+    }
+  }
+
   getTimeRemaining(endDateString: string | undefined): string {
     if (!endDateString) {
       return 'Fecha no disponible';

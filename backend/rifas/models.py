@@ -55,6 +55,12 @@ class Raffle(models.Model):
     scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='provincial')
     allowed_locations = models.ManyToManyField(Location, blank=True, related_name='raffles')
     
+    # Winner fields
+    draw_date = models.DateTimeField(blank=True, null=True)
+    winner_ticket = models.PositiveIntegerField(blank=True, null=True)
+    winner_name = models.CharField(max_length=200, blank=True, null=True)
+    winner_email = models.EmailField(blank=True, null=True)
+    
     def __str__(self):
         return self.name
     

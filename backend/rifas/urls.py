@@ -15,6 +15,8 @@ urlpatterns = [
     path('raffles/my-raffles/', views.UserRafflesView.as_view(), name='user_raffles'),
     path('raffles/<int:pk>/', views.RaffleDetailView.as_view(), name='raffle_detail'),
     path('raffles/<int:raffle_id>/tickets/', views.raffle_tickets, name='raffle_tickets'),
+    path('raffles/<int:raffle_id>/sold-tickets/', views.raffle_sold_tickets, name='raffle_sold_tickets'),
+    path('raffles/<int:raffle_id>/draw/', views.perform_raffle_draw, name='perform_raffle_draw'),
     
     # Cart URLs
     path('cart/', views.get_cart, name='get_cart'),

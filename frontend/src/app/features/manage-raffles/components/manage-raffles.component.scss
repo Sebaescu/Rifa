@@ -352,6 +352,42 @@
               background: rgba(244, 67, 54, 0.3);
             }
           }
+
+          // Estilos específicos para botones de sorteo
+          &.draw-btn-enabled {
+            background: linear-gradient(45deg, #667eea, #764ba2) !important;
+            color: white !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+
+            &:hover {
+              background: linear-gradient(45deg, #764ba2, #667eea) !important;
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+
+            mat-icon {
+              animation: pulse 2s infinite;
+            }
+          }
+
+          &.draw-btn-disabled {
+            background: rgba(128, 128, 128, 0.3) !important;
+            color: rgba(128, 128, 128, 0.7) !important;
+            border: 1px solid rgba(128, 128, 128, 0.2) !important;
+            cursor: not-allowed !important;
+            opacity: 0.6;
+
+            &:hover {
+              background: rgba(128, 128, 128, 0.3) !important;
+              transform: none !important;
+              box-shadow: none !important;
+            }
+
+            mat-icon {
+              opacity: 0.5;
+            }
+          }
         }
       }
     }
@@ -477,5 +513,18 @@
       flex-direction: column;
       gap: 0.5rem;
     }
+  }
+}
+
+// Animación para el ícono del botón de sorteo habilitado
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
   }
 }

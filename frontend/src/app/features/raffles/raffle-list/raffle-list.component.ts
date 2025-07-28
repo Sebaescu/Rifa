@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RaffleService } from '../../../core/services/raffle.service';
@@ -68,32 +69,44 @@ import { Raffle } from '../../../shared/models/raffle.model';
 
       <!-- Raffles Grid -->
       <div *ngIf="!isLoading && filteredRaffles.length > 0" class="raffles-grid">
-        <mat-card class="raffle-card" *ngFor="let raffle of filteredRaffles" (click)="viewRaffleDetails(raffle.id)">
-          <div class="card-image" *ngIf="raffle.image">
-            <img [src]="raffle.image" [alt]="raffle.name">
-          </div>
-          <mat-card-header>
-            <mat-card-title>{{ raffle.name }}</mat-card-title>
-            <mat-card-subtitle>
-              <div class="distance" *ngIf="raffle.distance_km">
-                <mat-icon>location_on</mat-icon>
-                {{ formatDistance(raffle.distance_km) }}
-              </div>
-            </mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="description">{{ raffle.description | slice:0:100 }}...</p>
-            <div class="raffle-info">
-              <div class="price">
-                <span class="label">Precio:</span>
-                <span class="value">\${{ raffle.ticket_price }}</span>
-              </div>
-              <div class="tickets">
-                <span class="label">Disponibles:</span>
-                <span class="value">{{ raffle.tickets_available }}</span>
-              </div>
+        <mat-card class="raffle-card" *ngFor="let raffle of filteredRaffles">
+          <div class="card-content" (click)="viewRaffleDetails(raffle.id)">
+            <div class="card-image" *ngIf="raffle.image">
+              <img [src]="raffle.image" [alt]="raffle.name">
             </div>
-          </mat-card-content>
+            <mat-card-header>
+              <mat-card-title>{{ raffle.name }}</mat-card-title>
+              <mat-card-subtitle>
+                <div class="distance" *ngIf="raffle.distance_km">
+                  <mat-icon>location_on</mat-icon>
+                  {{ formatDistance(raffle.distance_km) }}
+                </div>
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="description">{{ raffle.description | slice:0:100 }}...</p>
+              <div class="raffle-info">
+                <div class="price">
+                  <span class="label">Precio:</span>
+                  <span class="value">\${{ raffle.ticket_price }}</span>
+                </div>
+                <div class="tickets">
+                  <span class="label">Disponibles:</span>
+                  <span class="value">{{ raffle.tickets_available }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </div>
+          <div class="card-actions">
+            <button mat-fab
+                    color="primary"
+                    class="add-to-cart-btn"
+                    (click)="addToCart(raffle, $event)"
+                    [disabled]="raffle.tickets_available <= 0"
+                    [title]="raffle.tickets_available === 0 ? 'Sin boletos disponibles' : 'Añadir al carrito'">
+              <mat-icon>add_shopping_cart</mat-icon>
+            </button>
+          </div>
         </mat-card>
       </div>
     </div>
@@ -167,11 +180,54 @@ import { Raffle } from '../../../shared/models/raffle.model';
     }
 
     .raffle-card {
-      cursor: pointer;
+      cursor: default;
       transition: all 0.3s ease;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid #e0e0e0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-content {
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .card-content:hover ~ .card-actions .add-to-cart-btn,
+    .card-actions:hover .add-to-cart-btn {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .card-actions {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 2;
+    }
+
+    .add-to-cart-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+      opacity: 0.9;
+      transform: scale(0.9);
+    }
+
+    .add-to-cart-btn:hover {
+      transform: scale(1.1) !important;
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    .add-to-cart-btn:disabled {
+      background: #ccc !important;
+      color: #999 !important;
+      box-shadow: none !important;
+      cursor: not-allowed !important;
+      opacity: 0.5 !important;
     }
 
     .raffle-card:hover {
@@ -425,7 +481,8 @@ export class RaffleListComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private raffleService: RaffleService
+    private raffleService: RaffleService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -560,6 +617,30 @@ export class RaffleListComponent implements OnInit, OnDestroy {
       return `${Math.round(distance * 1000)}m`;
     }
     return `${distance.toFixed(1)}km`;
+  }
+
+  addToCart(raffle: Raffle, event: Event): void {
+    // Prevenir que el click propague al card y abra los detalles
+    event.stopPropagation();
+
+    // Verificar que la rifa tenga boletos disponibles
+    if (raffle.tickets_available === 0) {
+      this.showMessage('No hay boletos disponibles para esta rifa');
+      return;
+    }
+
+    console.log('Navegando a selección de tickets para:', raffle.name, 'ID:', raffle.id);
+
+    // Navegar a la página de selección de tickets
+    this.router.navigate(['/raffles', raffle.id, 'tickets']);
+  }
+
+  private showMessage(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
   }
 
   onSearchInput(): void {

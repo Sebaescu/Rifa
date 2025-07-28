@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Raffle } from '../../../shared/models/raffle.model';
@@ -161,10 +162,25 @@ import { User } from '../../../shared/models/user.model';
           </div>
 
           <div class="raffle-actions">
-            <button mat-button color="primary" [routerLink]="['/rifas', raffle.id]">
-              <mat-icon>visibility</mat-icon>
-              Ver
+            <!-- Botón Realizar Sorteo - SIEMPRE visible para rifas activas -->
+            <button *ngIf="raffle.status === 'active'"
+                    mat-button
+                    [class]="isReadyForDraw(raffle) ? 'draw-btn-enabled' : 'draw-btn-disabled'"
+                    [disabled]="!isReadyForDraw(raffle)"
+                    (click)="performDraw(raffle)">
+              <mat-icon>casino</mat-icon>
+              Realizar Sorteo
             </button>
+
+            <!-- Botón Ver Resultados - Solo para rifas completadas -->
+            <button *ngIf="raffle.status === 'completed'"
+                    mat-button
+                    color="primary"
+                    [routerLink]="['/draw', raffle.id, 'results']">
+              <mat-icon>emoji_events</mat-icon>
+              Resultados
+            </button>
+
             <button mat-button color="accent" [routerLink]="['/raffles/edit', raffle.id]">
               <mat-icon>edit</mat-icon>
               Editar
@@ -193,7 +209,8 @@ export class ManageRafflesComponent implements OnInit {
 
   constructor(
     private raffleService: RaffleService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -309,6 +326,51 @@ export class ManageRafflesComponent implements OnInit {
     if (confirm(`¿Estás seguro de que deseas eliminar la rifa "${raffle.name}"? Esta acción no se puede deshacer.`)) {
       this.deleteRaffle(raffle);
     }
+  }
+
+  isReadyForDraw(raffle: Raffle): boolean {
+    // Verificar que la rifa esté activa
+    if (raffle.status !== 'active') {
+      console.log(`Rifa ${raffle.name} no está activa: ${raffle.status}`);
+      return false;
+    }
+
+    // TEMPORALMENTE comentado para pruebas - descomentar en producción
+    // if (raffle.tickets_sold === 0) {
+    //   console.log(`Rifa ${raffle.name} no tiene boletos vendidos`);
+    //   return false;
+    // }
+
+    const today = new Date();
+    const endDate = new Date(raffle.end_date);
+
+    // Comparar solo las fechas (sin tiempo)
+    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    console.log(`Rifa ${raffle.name}:`);
+    console.log(`  - Fecha actual: ${todayDateOnly.toLocaleDateString()}`);
+    console.log(`  - Fecha fin: ${endDateOnly.toLocaleDateString()}`);
+    console.log(`  - ¿Terminó?: ${todayDateOnly > endDateOnly}`);
+    console.log(`  - Boletos vendidos: ${raffle.tickets_sold}`);
+
+    // El sorteo se puede realizar el día después de que termine la rifa
+    return todayDateOnly > endDateOnly;
+  }
+
+  performDraw(raffle: Raffle): void {
+    if (!this.isReadyForDraw(raffle)) {
+      alert('Esta rifa aún no está lista para el sorteo.');
+      return;
+    }
+
+    if (raffle.tickets_sold === 0) {
+      alert('No se puede realizar el sorteo. No se han vendido boletos para esta rifa.');
+      return;
+    }
+
+    // Navegar a la página dedicada del sorteo
+    this.router.navigate(['/draw', raffle.id]);
   }
 
   deleteRaffle(raffle: Raffle): void {

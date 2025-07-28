@@ -225,4 +225,27 @@ export class RaffleService {
       total_tickets_sold: number
     }>(`${this.API_URL}/statistics/`);
   }
+
+  // Métodos para sorteos
+  performDraw(raffleId: number): Observable<{
+    winner_ticket: number,
+    winner_name: string,
+    winner_email: string,
+    draw_date: string
+  }> {
+    return this.http.post<{
+      winner_ticket: number,
+      winner_name: string,
+      winner_email: string,
+      draw_date: string
+    }>(`${this.API_URL}/raffles/${raffleId}/draw/`, {});
+  }
+
+  updateRaffleStatus(raffleId: number, status: 'completed'): Observable<Raffle> {
+    return this.http.patch<Raffle>(`${this.API_URL}/raffles/${raffleId}/`, { status });
+  }
+
+  getSoldTickets(raffleId: number): Observable<Ticket[]> {
+    return this.http.get<Ticket[]>(`${this.API_URL}/raffles/${raffleId}/sold-tickets/`);
+  }
 }

@@ -34,6 +34,11 @@ export interface Raffle {
   scope: 'provincial' | 'national' | 'international';
   allowed_locations: Location[];
   distance_km?: number; // Distancia calculada desde la ubicación del usuario
+  // Propiedades del sorteo
+  draw_date?: string; // Fecha cuando se realizó el sorteo
+  winner_ticket?: number; // Número del ticket ganador
+  winner_name?: string; // Nombre del ganador
+  winner_email?: string; // Email del ganador
 }
 
 export interface Ticket {
@@ -44,6 +49,13 @@ export interface Ticket {
   purchase_date?: string;
   reserved_until?: string;
   created_at: string;
+  buyer?: {
+    id: number;
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+  };
   raffle?: {
     id: number;
     name: string;

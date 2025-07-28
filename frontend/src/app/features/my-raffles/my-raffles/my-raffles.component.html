@@ -63,9 +63,14 @@
           <!-- Raffle Content -->
           <mat-card-content>
             <div class="raffle-info">
-              <div class="prize-section">
-                <h3>🏆 Premio</h3>
-                <p>{{ raffleGroup.raffle?.prize }}</p>
+              <div class="prize-section"
+                   [ngClass]="{
+                     'winner': isWinner(raffleGroup),
+                     'no-luck': raffleGroup.raffle?.status === 'completed' && !isWinner(raffleGroup),
+                     'active': raffleGroup.raffle?.status !== 'completed'
+                   }">
+                <h3>🏆 {{ getPrizeStatus(raffleGroup) }}</h3>
+                <p>{{ getPrizeMessage(raffleGroup) }}</p>
               </div>
 
               <div class="raffle-stats">

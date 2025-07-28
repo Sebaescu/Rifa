@@ -39,6 +39,16 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'draw/:id',
+    loadChildren: () => import('./features/draw/draw.module').then(m => m.DrawModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'sorteo/:id',
+    loadChildren: () => import('./features/draw/draw.module').then(m => m.DrawModule),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: '/auth/login'
   }

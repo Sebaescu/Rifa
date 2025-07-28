@@ -186,6 +186,7 @@
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
+            transition: all 0.3s ease;
 
             h3 {
               margin: 0 0 8px 0;
@@ -197,6 +198,52 @@
               margin: 0;
               font-weight: 500;
               color: #333;
+            }
+
+            // Estado ganador
+            &.winner {
+              background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+              border: 2px solid #4caf50;
+              box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+
+              h3 {
+                color: #2e7d32;
+                font-weight: 700;
+              }
+
+              p {
+                color: #1b5e20;
+                font-weight: 600;
+              }
+            }
+
+            // Estado sin suerte
+            &.no-luck {
+              background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+              border: 2px solid #ff7675;
+
+              h3 {
+                color: #d63031;
+                font-weight: 600;
+              }
+
+              p {
+                color: #2d3436;
+                font-size: 0.9rem;
+              }
+            }
+
+            // Estado activo (rifa en curso)
+            &.active {
+              background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+
+              h3 {
+                color: #00b894;
+              }
+
+              p {
+                color: #2d3436;
+              }
             }
           }
 

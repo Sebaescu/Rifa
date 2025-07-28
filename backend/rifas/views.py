@@ -5,6 +5,12 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+import random
+import requests
+import json
 from .models import Raffle, Ticket, Cart, CartItem, Order, OrderItem, Location
 from .serializers import (
     RaffleSerializer, RaffleCreateSerializer, RaffleDetailSerializer,
@@ -592,3 +598,146 @@ def raffle_statistics(request):
         })
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def send_winner_notification_email(raffle, winner_user, winning_ticket_number):
+    """Send notification email to the raffle winner"""
+    try:
+        # Format the draw date
+        draw_date_formatted = raffle.draw_date.strftime("%d de %B de %Y a las %H:%M")
+        
+        # Prepare context for the email template
+        context = {
+            'winner_name': raffle.winner_name,
+            'raffle_name': raffle.name,
+            'winning_ticket': winning_ticket_number,
+            'draw_date': draw_date_formatted,
+            'organizer_name': f"{raffle.created_by.first_name} {raffle.created_by.last_name}".strip() or raffle.created_by.username,
+            'organizer_email': raffle.created_by.email,
+        }
+        
+        # Render the HTML email template
+        html_message = render_to_string('emails/winner_notification.html', context)
+        
+        # Email subject
+        subject = f'🎉 ¡Felicidades! Ganaste la rifa: {raffle.name}'
+        
+        # Send the email
+        send_mail(
+            subject=subject,
+            message='',  # Plain text version (empty since we're using HTML)
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[winner_user.email],
+            html_message=html_message,
+            fail_silently=False
+        )
+        
+        print(f"DEBUG: Winner notification email sent successfully to {winner_user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"DEBUG: Error sending winner notification email: {str(e)}")
+        return False
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def perform_raffle_draw(request, raffle_id):
+    """Perform the raffle draw and select a winner from sold tickets"""
+    import random
+    from django.utils import timezone
+    
+    try:
+        raffle = get_object_or_404(Raffle, id=raffle_id)
+        
+        print(f"DEBUG: Starting draw for raffle {raffle_id}")
+        print(f"DEBUG: Raffle status: {raffle.status}")
+        print(f"DEBUG: Raffle created by: {raffle.created_by}")
+        print(f"DEBUG: Request user: {request.user}")
+        
+        # Check if user is the creator of the raffle
+        if raffle.created_by != request.user:
+            return Response({
+                'error': 'You are not authorized to perform this draw'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check if raffle is active
+        if raffle.status != 'active':
+            return Response({
+                'error': 'Raffle is not active'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if raffle has ended
+        if timezone.now() <= raffle.end_date:
+            return Response({
+                'error': 'Raffle has not ended yet'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get all sold tickets
+        sold_tickets = Ticket.objects.filter(
+            raffle=raffle, 
+            status='sold',
+            purchased_by__isnull=False
+        ).select_related('purchased_by')
+        
+        print(f"DEBUG: Found {sold_tickets.count()} sold tickets")
+        for ticket in sold_tickets:
+            print(f"DEBUG: Ticket #{ticket.number} bought by {ticket.purchased_by.username}")
+        
+        if not sold_tickets.exists():
+            return Response({
+                'error': 'No sold tickets available for draw'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Select a random winner
+        winning_ticket = random.choice(sold_tickets)
+        winner_user = winning_ticket.purchased_by
+        
+        print(f"DEBUG: Selected winning ticket #{winning_ticket.number}")
+        print(f"DEBUG: Winner user: {winner_user.username}")
+        print(f"DEBUG: Winner name: {winner_user.first_name} {winner_user.last_name}")
+        print(f"DEBUG: Winner email: {winner_user.email}")
+        
+        # Update raffle with winner information
+        raffle.draw_date = timezone.now()
+        raffle.winner_ticket = winning_ticket.number
+        raffle.winner_name = f"{winner_user.first_name} {winner_user.last_name}".strip() or winner_user.username
+        raffle.winner_email = winner_user.email
+        
+        print(f"DEBUG: Before save - raffle.winner_ticket: {raffle.winner_ticket}")
+        print(f"DEBUG: Before save - raffle.winner_name: {raffle.winner_name}")
+        print(f"DEBUG: Before save - raffle.winner_email: {raffle.winner_email}")
+        
+        raffle.save()
+        
+        print(f"DEBUG: After save - raffle.winner_ticket: {raffle.winner_ticket}")
+        print(f"DEBUG: After save - raffle.winner_name: {raffle.winner_name}")
+        print(f"DEBUG: After save - raffle.winner_email: {raffle.winner_email}")
+        
+        # Send winner notification email
+        email_sent = send_winner_notification_email(raffle, winner_user, winning_ticket.number)
+        
+        return Response({
+            'winner_ticket': winning_ticket.number,
+            'winner_name': raffle.winner_name,
+            'winner_email': raffle.winner_email,
+            'draw_date': raffle.draw_date.isoformat(),
+            'email_sent': email_sent
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': f'An error occurred during the draw: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def raffle_sold_tickets(request, raffle_id):
+    """Get all sold tickets for a specific raffle"""
+    raffle = get_object_or_404(Raffle, id=raffle_id)
+    sold_tickets = Ticket.objects.filter(
+        raffle=raffle, 
+        status='sold',
+        purchased_by__isnull=False
+    ).select_related('purchased_by')
+    
+    serializer = TicketSerializer(sold_tickets, many=True)
+    return Response(serializer.data)

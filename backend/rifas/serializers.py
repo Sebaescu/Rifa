@@ -13,11 +13,24 @@ class LocationSerializer(serializers.ModelSerializer):
                  'latitude', 'longitude']
 
 class TicketSerializer(serializers.ModelSerializer):
+    buyer = serializers.SerializerMethodField()
+    
     class Meta:
         model = Ticket
         fields = ['id', 'number', 'status', 'purchased_by', 'purchase_date', 
-                 'reserved_until', 'created_at']
+                 'reserved_until', 'created_at', 'buyer']
         read_only_fields = ['id', 'purchased_by', 'purchase_date', 'created_at']
+    
+    def get_buyer(self, obj):
+        if obj.purchased_by:
+            return {
+                'id': obj.purchased_by.id,
+                'username': obj.purchased_by.username,
+                'email': obj.purchased_by.email,
+                'first_name': obj.purchased_by.first_name,
+                'last_name': obj.purchased_by.last_name
+            }
+        return None
 
 class TicketWithRaffleSerializer(serializers.ModelSerializer):
     raffle = serializers.SerializerMethodField()
@@ -52,7 +65,8 @@ class RaffleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'ticket_price', 'total_tickets',
                  'start_date', 'end_date', 'status', 'created_by', 'created_at',
                  'updated_at', 'image', 'terms_conditions', 'tickets_available', 
-                 'tickets_sold', 'scope', 'allowed_locations', 'distance_km']
+                 'tickets_sold', 'scope', 'allowed_locations', 'distance_km',
+                 'draw_date', 'winner_ticket', 'winner_name', 'winner_email']
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
     
     def get_tickets_available(self, obj):
@@ -175,7 +189,8 @@ class RaffleDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'ticket_price', 'total_tickets',
                  'start_date', 'end_date', 'status', 'created_by', 'created_at',
                  'updated_at', 'image', 'terms_conditions', 'tickets', 
-                 'tickets_available', 'tickets_sold', 'scope', 'allowed_locations']
+                 'tickets_available', 'tickets_sold', 'scope', 'allowed_locations',
+                 'draw_date', 'winner_ticket', 'winner_name', 'winner_email']
     
     def get_tickets_available(self, obj):
         return obj.tickets.filter(status='available').count()

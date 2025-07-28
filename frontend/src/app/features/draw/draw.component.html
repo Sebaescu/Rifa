@@ -1,0 +1,178 @@
+<div class="draw-container">
+  <!-- Header -->
+  <div class="draw-header">
+    <button mat-icon-button (click)="goBack()" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-content">
+      <h1>{{ isResultsMode ? 'Resultados del Sorteo' : 'Realizar Sorteo' }}</h1>
+      <p *ngIf="raffle">{{ raffle.name }}</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-section">
+    <mat-spinner></mat-spinner>
+    <p>Cargando información de la rifa...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-section">
+    <mat-icon>error</mat-icon>
+    <h3>Error</h3>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadRaffle()">
+      Intentar de nuevo
+    </button>
+  </div>
+
+  <!-- Draw Content -->
+  <div *ngIf="!isLoading && !error && raffle" class="draw-content">
+    <!-- Raffle Information -->
+    <div class="raffle-info-card">
+      <div class="raffle-header">
+        <img [src]="getImageUrl(raffle.image)" [alt]="raffle.name" class="raffle-image">
+        <div class="raffle-details">
+          <h2>{{ raffle.name }}</h2>
+          <p class="description">{{ raffle.description }}</p>
+          <div class="raffle-stats">
+            <div class="stat">
+              <mat-icon>confirmation_number</mat-icon>
+              <span>{{ raffle.tickets_sold }} / {{ raffle.total_tickets }} boletos vendidos</span>
+            </div>
+            <div class="stat">
+              <mat-icon>attach_money</mat-icon>
+              <span>Valor por boleto: {{ '$' + raffle.ticket_price }}</span>
+            </div>
+            <div class="stat">
+              <mat-icon>event</mat-icon>
+              <span>Finalizado: {{ formatDate(raffle.end_date) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Draw Section -->
+    <div class="draw-section">
+      <div class="draw-card">
+        <!-- Modo Resultados: Mostrar solo el ganador -->
+        <div *ngIf="isResultsMode" class="results-mode">
+          <div class="results-header">
+            <mat-icon class="results-icon">emoji_events</mat-icon>
+            <h3>¡Sorteo Completado!</h3>
+            <p class="results-description">
+              El sorteo de "{{raffle?.name}}" se realizó el {{raffle?.end_date | date:'dd/MM/yyyy HH:mm'}}
+            </p>
+          </div>
+
+          <!-- DEBUG INFO - Remove in production -->
+          <div style="background: rgba(0,0,0,0.1); padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px; color: white;" *ngIf="raffle">
+            <strong>DEBUG INFO:</strong><br>
+            Raffle Status: {{raffle.status}}<br>
+            Winner Ticket: {{raffle.winner_ticket}}<br>
+            Winner Name: {{raffle.winner_name}}<br>
+            Winner Email: {{raffle.winner_email}}<br>
+            Draw Date: {{raffle.draw_date}}
+          </div>
+
+          <!-- Mostrar ganador (datos reales del backend) -->
+          <div class="winner-section">
+            <div class="winner-card">
+              <div class="winner-header">
+                <mat-icon class="winner-icon">star</mat-icon>
+                <h4>Ganador del Sorteo</h4>
+              </div>
+
+              <div class="winner-details">
+                <div class="winner-stat">
+                  <mat-icon>confirmation_number</mat-icon>
+                  <span>Número ganador: <strong>#{{ raffle?.winner_ticket }}</strong></span>
+                </div>
+
+                <div class="winner-stat">
+                  <mat-icon>person</mat-icon>
+                  <span>Ganador: {{ raffle?.winner_name }}</span>
+                </div>
+
+                <div class="winner-stat">
+                  <mat-icon>email</mat-icon>
+                  <span>{{ raffle?.winner_email }}</span>
+                </div>
+
+                <div class="winner-stat">
+                  <mat-icon>schedule</mat-icon>
+                  <span>Sorteo realizado: {{ raffle?.draw_date | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="prize-summary">
+              <h4>Premio Ganado</h4>
+              <div class="prize-details">
+                <div class="prize-value">
+                  <mat-icon>attach_money</mat-icon>
+                  <span>Premio: {{raffle?.name}}</span>
+                </div>
+                <p class="prize-description">{{raffle?.description}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modo Sorteo: Interfaz para realizar el sorteo -->
+        <div *ngIf="!isResultsMode">
+          <div class="draw-animation" [class.spinning]="isDrawing">
+            <mat-icon class="draw-icon">casino</mat-icon>
+          </div>
+          <h3>¿Listo para el sorteo?</h3>
+          <p class="draw-description">
+            Se seleccionará automáticamente un ganador de entre los {{ raffle.tickets_sold }} boletos vendidos.
+          </p>
+
+          <!-- Winner Display -->
+          <div *ngIf="winner" class="winner-section">
+            <div class="winner-card">
+              <mat-icon class="trophy-icon">emoji_events</mat-icon>
+              <h4>¡Felicidades al ganador!</h4>
+              <div class="winner-info">
+                <p><strong>Boleto ganador:</strong> #{{ winner.ticket_number }}</p>
+                <p><strong>Ganador:</strong> {{ winner.user_name }}</p>
+                <p><strong>Email:</strong> {{ winner.user_email }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Draw Button -->
+          <div class="draw-actions">
+            <button *ngIf="!winner && !isDrawing"
+                    mat-raised-button
+                    color="primary"
+                    class="draw-btn primary"
+                    (click)="performDraw()"
+                    [disabled]="raffle.tickets_sold === 0">
+              <mat-icon>casino</mat-icon>
+              Realizar Sorteo
+            </button>
+
+            <button *ngIf="isDrawing"
+                    mat-raised-button
+                    class="draw-btn"
+                    disabled>
+              <mat-icon>hourglass_empty</mat-icon>
+              Realizando sorteo...
+            </button>
+
+            <div *ngIf="raffle.tickets_sold === 0" class="no-tickets">
+              <mat-icon>warning</mat-icon>
+              <h3>No hay boletos vendidos</h3>
+              <p class="no-tickets-message">
+                No se puede realizar el sorteo porque no se han vendido boletos para esta rifa.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
