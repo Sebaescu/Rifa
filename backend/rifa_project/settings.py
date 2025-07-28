@@ -254,13 +254,26 @@ CORS_ALLOWED_ORIGINS = [
     "https://sebaescu.github.io",  # GitHub Pages
 ]
 
-# En producción, permitir desde GitHub Pages
-if not DEBUG:
-    github_pages_url = os.getenv('GITHUB_PAGES_URL')
-    if github_pages_url:
-        CORS_ALLOWED_ORIGINS.append(github_pages_url)
+# Agregar automáticamente dominios de producción
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://sebaescu.github.io')
+if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Por seguridad, mantener False en producción
+
+# Headers permitidos para CORS
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Configuración adicional para producción
 if not DEBUG:
