@@ -226,7 +226,6 @@
             <mat-select formControlName="scope" placeholder="Selecciona el alcance" (selectionChange)="onScopeChange($event.value)">
               <mat-option *ngFor="let scope of scopes" [value]="scope.value">
                 <div class="scope-option-simple">
-                  <mat-icon>{{ scope.icon }}</mat-icon>
                   <span>{{ scope.label }}</span>
                 </div>
               </mat-option>
