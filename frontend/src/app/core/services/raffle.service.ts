@@ -64,20 +64,20 @@ export class RaffleService {
   }
 
   updateRaffle(id: number, data: Partial<CreateRaffleRequest>): Observable<Raffle> {
-    const formData = new FormData();
-
-    Object.keys(data).forEach(key => {
-      const value = (data as any)[key];
-      if (value !== undefined && value !== null) {
-        if (key === 'image' && value instanceof File) {
-          formData.append(key, value);
-        } else {
-          formData.append(key, value.toString());
-        }
-      }
-    });
-
-    return this.http.put<Raffle>(`${this.API_URL}/raffles/${id}/`, formData);
+    return this.http.put<Raffle>(
+      `${this.API_URL}/raffles/${id}/`,
+      data,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    if (data.start_date === today) {
+      (data as any).status = 'activa';
+    }
+    return this.http.put<Raffle>(
+      `${this.API_URL}/raffles/${id}/`,
+      data,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   deleteRaffle(id: number): Observable<any> {
@@ -247,5 +247,10 @@ export class RaffleService {
 
   getSoldTickets(raffleId: number): Observable<Ticket[]> {
     return this.http.get<Ticket[]>(`${this.API_URL}/raffles/${raffleId}/sold-tickets/`);
+  }
+
+  activateRafflesStartingToday(): Observable<any> {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.http.post(`${this.API_URL}/raffles/activate-today/`, { today });
   }
 }

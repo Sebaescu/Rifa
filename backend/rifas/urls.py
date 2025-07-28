@@ -34,6 +34,7 @@ urlpatterns = [
     path('raffles/<int:raffle_id>/tickets/', views.raffle_tickets, name='raffle_tickets'),
     path('raffles/<int:raffle_id>/sold-tickets/', views.raffle_sold_tickets, name='raffle_sold_tickets'),
     path('raffles/<int:raffle_id>/draw/', views.perform_raffle_draw, name='perform_raffle_draw'),
+    path('raffles/activate-today/', views.activate_raffles_starting_today, name='activate_raffles_starting_today'),
     
     # Cart URLs
     path('cart/', views.get_cart, name='get_cart'),

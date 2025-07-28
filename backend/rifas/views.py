@@ -729,3 +729,13 @@ def raffle_sold_tickets(request, raffle_id):
     
     serializer = TicketSerializer(sold_tickets, many=True)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def activate_raffles_starting_today(request):
+    today = request.data.get('today')
+    if not today:
+        return Response({'error': 'Missing today parameter'}, status=status.HTTP_400_BAD_REQUEST)
+    from .models import Raffle
+    updated = Raffle.objects.filter(status='inactive', start_date__date=today).update(status='active')
+    return Response({'activated': updated})

@@ -45,6 +45,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Activar rifas que comienzan hoy
+    this.raffleService.activateRafflesStartingToday().subscribe({
+      next: (res) => {
+        console.log('Rifas activadas automáticamente:', res);
+      },
+      error: (err) => {
+        console.error('Error activando rifas automáticamente:', err);
+      }
+    });
+
     // Configurar lazy loading para búsqueda
     const searchSub = this.searchSubject.pipe(
       debounceTime(300), // Esperar 300ms después de que el usuario deje de escribir
