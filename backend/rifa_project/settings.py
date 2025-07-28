@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,6 +32,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-developme
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# En producción, agregar el dominio de Railway automáticamente
+RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL')
+if RAILWAY_STATIC_URL:
+    ALLOWED_HOSTS.append(RAILWAY_STATIC_URL.replace('https://', '').replace('http://', ''))
+
+# También permitir cualquier subdominio de railway.app en producción
+if not DEBUG:
+    ALLOWED_HOSTS.extend(['*.railway.app', '*.up.railway.app'])
 
 
 # Application definition
@@ -59,6 +69,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,16 +102,26 @@ WSGI_APPLICATION = 'rifa_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'), 
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+# Configuración para Supabase
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    # Producción con Supabase
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    # Desarrollo local (fallback a PostgreSQL local si existe)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'rifa_system'),
+            'USER': os.getenv('DB_USER', 'rifa_user'), 
+            'PASSWORD': os.getenv('DB_PASSWORD', 'rifa_password123'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
 
 
 # Password validation
@@ -139,6 +160,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Whitenoise configuration for serving static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
@@ -190,7 +214,7 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 SERVER_EMAIL = os.getenv('SERVER_EMAIL', EMAIL_HOST_USER)
 
 # Frontend URL for password reset links
-FRONTEND_URL = 'http://localhost:4200'
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:4200')
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
@@ -212,9 +236,31 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Angular dev server
     "http://127.0.0.1:4200",
+    "https://sebaescu.github.io",  # GitHub Pages (ajusta con tu usuario)
 ]
 
+# En producción, permitir desde GitHub Pages
+if not DEBUG:
+    github_pages_url = os.getenv('GITHUB_PAGES_URL')
+    if github_pages_url:
+        CORS_ALLOWED_ORIGINS.append(github_pages_url)
+
 CORS_ALLOW_CREDENTIALS = True
+
+# Configuración adicional para producción
+if not DEBUG:
+    # Configuraciones de seguridad para producción
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Supabase Configuration (opcional para funcionalidades adicionales)
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY')
+SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 # Time zone for Ecuador
 TIME_ZONE = 'America/Guayaquil'
