@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { StatisticsService } from '../../../core/services/statistics.service';
@@ -19,10 +20,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   stateRaffles: Raffle[] = [];
   nationalRaffles: Raffle[] = [];
   internationalRaffles: Raffle[] = [];
+
+  // Rifas originales (sin filtrar)
+  originalLocalRaffles: Raffle[] = [];
+  originalStateRaffles: Raffle[] = [];
+  originalNationalRaffles: Raffle[] = [];
+  originalInternationalRaffles: Raffle[] = [];
+
   isLoading = true;
   isRefreshingLocation = false;
   userLocation: UserLocation | null = null;
   totalActiveRaffles = 0;
+  searchQuery = '';
+
+  private searchSubject = new Subject<string>();
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -34,6 +45,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Configurar lazy loading para búsqueda
+    const searchSub = this.searchSubject.pipe(
+      debounceTime(300), // Esperar 300ms después de que el usuario deje de escribir
+      distinctUntilChanged() // Solo procesar si el valor cambió
+    ).subscribe(searchTerm => {
+      this.filterRaffles(searchTerm);
+    });
+    this.subscriptions.push(searchSub);
+
     // Suscribirse a la ubicación del usuario
     const locationSub = this.raffleService.userLocation$.subscribe(location => {
       this.userLocation = location;
@@ -107,18 +127,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.nationalRaffles = [];
     this.internationalRaffles = [];
 
+    // Reset original arrays
+    this.originalLocalRaffles = [];
+    this.originalStateRaffles = [];
+    this.originalNationalRaffles = [];
+    this.originalInternationalRaffles = [];
+
     activeRaffles.forEach(raffle => {
       console.log(`DEBUG: Processing raffle "${raffle.name}" with scope: ${raffle.scope}`);
 
       switch(raffle.scope) {
         case 'provincial':
           this.stateRaffles.push(raffle);
+          this.originalStateRaffles.push(raffle);
           break;
         case 'national':
           this.nationalRaffles.push(raffle);
+          this.originalNationalRaffles.push(raffle);
           break;
         case 'international':
           this.internationalRaffles.push(raffle);
+          this.originalInternationalRaffles.push(raffle);
           break;
         default:
           console.warn(`Unknown scope: ${raffle.scope} for raffle: ${raffle.name}`);
@@ -129,6 +158,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.stateRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
     this.nationalRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
     this.internationalRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+
+    // Sort original arrays too
+    this.originalStateRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    this.originalNationalRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+    this.originalInternationalRaffles.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
 
     console.log('DEBUG: Raffles organized:', {
       provincial: this.stateRaffles.length,
@@ -332,6 +366,50 @@ export class DashboardComponent implements OnInit, OnDestroy {
       duration: 3000,
       horizontalPosition: 'center',
       verticalPosition: 'bottom'
+    });
+  }
+
+  onSearchInput(): void {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.searchSubject.next('');
+  }
+
+  private filterRaffles(searchTerm: string): void {
+    if (!searchTerm || searchTerm.length < 2) {
+      // Restaurar todas las rifas originales
+      this.stateRaffles = [...this.originalStateRaffles];
+      this.nationalRaffles = [...this.originalNationalRaffles];
+      this.internationalRaffles = [...this.originalInternationalRaffles];
+      return;
+    }
+
+    const term = searchTerm.toLowerCase().trim();
+
+    // Filtrar cada categoría
+    this.stateRaffles = this.originalStateRaffles.filter(raffle =>
+      raffle.name.toLowerCase().includes(term) ||
+      raffle.description.toLowerCase().includes(term)
+    );
+
+    this.nationalRaffles = this.originalNationalRaffles.filter(raffle =>
+      raffle.name.toLowerCase().includes(term) ||
+      raffle.description.toLowerCase().includes(term)
+    );
+
+    this.internationalRaffles = this.originalInternationalRaffles.filter(raffle =>
+      raffle.name.toLowerCase().includes(term) ||
+      raffle.description.toLowerCase().includes(term)
+    );
+
+    console.log('DEBUG: Filtered raffles:', {
+      searchTerm: term,
+      provincial: this.stateRaffles.length,
+      national: this.nationalRaffles.length,
+      international: this.internationalRaffles.length
     });
   }
 }

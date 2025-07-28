@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { Raffle } from '../../../shared/models/raffle.model';
 
@@ -13,9 +15,35 @@ import { Raffle } from '../../../shared/models/raffle.model';
         <p class="subtitle" *ngIf="currentScope">
           {{ getScopeDescription() }}
         </p>
-        <p class="search-info" *ngIf="searchQuery">
-          Resultados para: "{{ searchQuery }}"
-        </p>
+      </div>
+
+      <!-- Search Section -->
+      <div class="search-section" *ngIf="!isLoading">
+        <div class="search-container">
+          <div class="search-wrapper">
+            <div class="search-input-wrapper">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input
+                type="text"
+                placeholder="Buscar rifas por nombre o descripción..."
+                [(ngModel)]="searchQuery"
+                (input)="onSearchInput()"
+                class="search-input"
+              />
+              <button
+                mat-icon-button
+                *ngIf="searchQuery"
+                (click)="clearSearch()"
+                class="clear-search-btn"
+                matTooltip="Limpiar búsqueda">
+                <mat-icon>clear</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div *ngIf="searchQuery && searchQuery.length >= 2" class="search-status">
+            <small>Mostrando {{ filteredRaffles.length }} rifas que contienen "{{ searchQuery }}"</small>
+          </div>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -25,15 +53,22 @@ import { Raffle } from '../../../shared/models/raffle.model';
       </div>
 
       <!-- No Results -->
-      <div *ngIf="!isLoading && raffles.length === 0" class="no-results">
+      <div *ngIf="!isLoading && filteredRaffles.length === 0 && searchQuery" class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <h3>No se encontraron rifas</h3>
+        <p>No se encontraron rifas que coincidan con "{{ searchQuery }}". Intenta con otros términos de búsqueda.</p>
+      </div>
+
+      <!-- No Results (general) -->
+      <div *ngIf="!isLoading && raffles.length === 0 && !searchQuery" class="no-results">
         <mat-icon>search_off</mat-icon>
         <h3>No se encontraron rifas</h3>
         <p>{{ getNoResultsMessage() }}</p>
       </div>
 
       <!-- Raffles Grid -->
-      <div *ngIf="!isLoading && raffles.length > 0" class="raffles-grid">
-        <mat-card class="raffle-card" *ngFor="let raffle of raffles" (click)="viewRaffleDetails(raffle.id)">
+      <div *ngIf="!isLoading && filteredRaffles.length > 0" class="raffles-grid">
+        <mat-card class="raffle-card" *ngFor="let raffle of filteredRaffles" (click)="viewRaffleDetails(raffle.id)">
           <div class="card-image" *ngIf="raffle.image">
             <img [src]="raffle.image" [alt]="raffle.name">
           </div>
@@ -236,6 +271,131 @@ import { Raffle } from '../../../shared/models/raffle.model';
       color: #2196f3;
     }
 
+    /* Search Section Styles */
+    .search-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .search-title {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-align: center;
+      padding-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .search-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 1rem;
+    }
+
+    .search-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .search-wrapper {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 300px;
+      max-width: 500px;
+      display: flex;
+      align-items: center;
+      background: transparent;
+      border-radius: 50px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      padding: 0 20px;
+      transition: all 0.3s ease;
+    }
+
+    .search-input-wrapper:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .search-input-wrapper:focus-within {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #667eea;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .search-icon {
+      color: rgba(255, 255, 255, 0.8);
+      margin-right: 12px;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 16px;
+      padding: 16px 0;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .clear-search-btn {
+      color: rgba(255, 255, 255, 0.7);
+      transition: color 0.3s ease;
+    }
+
+    .clear-search-btn:hover {
+      color: white;
+    }
+
+    .search-status {
+      margin-top: 16px;
+      color: rgba(255, 255, 255, 0.7);
+      font-style: italic;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .search-section {
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .search-title {
+        font-size: 1.3rem;
+      }
+
+      .search-wrapper {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .search-input-wrapper {
+        min-width: unset;
+        width: 100%;
+      }
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 16px;
@@ -252,11 +412,15 @@ import { Raffle } from '../../../shared/models/raffle.model';
     }
   `]
 })
-export class RaffleListComponent implements OnInit {
+export class RaffleListComponent implements OnInit, OnDestroy {
   raffles: Raffle[] = [];
+  filteredRaffles: Raffle[] = [];
   isLoading = true;
   searchQuery: string = '';
   currentScope: string = '';
+
+  private searchSubject = new Subject<string>();
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -265,11 +429,24 @@ export class RaffleListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Configurar lazy loading para búsqueda
+    const searchSub = this.searchSubject.pipe(
+      debounceTime(300), // Esperar 300ms después de que el usuario deje de escribir
+      distinctUntilChanged() // Solo procesar si el valor cambió
+    ).subscribe(searchTerm => {
+      this.filterRaffles(searchTerm);
+    });
+    this.subscriptions.push(searchSub);
+
     this.route.queryParams.subscribe(params => {
       this.searchQuery = params['search'] || '';
       this.currentScope = params['scope'] || '';
       this.loadRaffles();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   loadRaffles(): void {
@@ -285,21 +462,9 @@ export class RaffleListComponent implements OnInit {
   }
 
   private searchRaffles(): void {
-    // Implementar búsqueda de rifas
-    // Por ahora, cargar todas las rifas y filtrar localmente
-    this.raffleService.getRafflesNearUser().subscribe({
-      next: (response: {count: number, results: Raffle[]}) => {
-        this.raffles = response.results.filter(raffle =>
-          raffle.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          raffle.description.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        console.error('Error searching raffles:', error);
-        this.isLoading = false;
-      }
-    });
+    // No necesitamos este método ya que usamos lazy loading
+    // La búsqueda se maneja a través de searchQuery y filteredRaffles
+    this.loadAllRaffles();
   }
 
   private loadRafflesByScope(): void {
@@ -308,7 +473,13 @@ export class RaffleListComponent implements OnInit {
         this.raffles = response.results.filter(raffle =>
           raffle.scope === this.currentScope && raffle.status === 'active'
         );
+        this.filteredRaffles = [...this.raffles]; // Inicializar filteredRaffles
         this.isLoading = false;
+
+        // Aplicar filtro si hay un searchQuery inicial
+        if (this.searchQuery) {
+          this.filterRaffles(this.searchQuery);
+        }
       },
       error: (error: any) => {
         console.error('Error loading raffles by scope:', error);
@@ -321,7 +492,13 @@ export class RaffleListComponent implements OnInit {
     this.raffleService.getRafflesNearUser().subscribe({
       next: (response: {count: number, results: Raffle[]}) => {
         this.raffles = response.results.filter(raffle => raffle.status === 'active');
+        this.filteredRaffles = [...this.raffles]; // Inicializar filteredRaffles
         this.isLoading = false;
+
+        // Aplicar filtro si hay un searchQuery inicial
+        if (this.searchQuery) {
+          this.filterRaffles(this.searchQuery);
+        }
       },
       error: (error: any) => {
         console.error('Error loading raffles:', error);
@@ -383,5 +560,36 @@ export class RaffleListComponent implements OnInit {
       return `${Math.round(distance * 1000)}m`;
     }
     return `${distance.toFixed(1)}km`;
+  }
+
+  onSearchInput(): void {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.searchSubject.next('');
+  }
+
+  private filterRaffles(searchTerm: string): void {
+    if (!searchTerm || searchTerm.length < 2) {
+      // Restaurar todas las rifas originales
+      this.filteredRaffles = [...this.raffles];
+      return;
+    }
+
+    const term = searchTerm.toLowerCase().trim();
+
+    // Filtrar rifas basado en el término de búsqueda
+    this.filteredRaffles = this.raffles.filter(raffle =>
+      raffle.name.toLowerCase().includes(term) ||
+      raffle.description.toLowerCase().includes(term)
+    );
+
+    console.log('DEBUG: Filtered raffles:', {
+      searchTerm: term,
+      originalCount: this.raffles.length,
+      filteredCount: this.filteredRaffles.length
+    });
   }
 }

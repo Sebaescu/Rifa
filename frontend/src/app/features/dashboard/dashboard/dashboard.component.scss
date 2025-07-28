@@ -741,3 +741,139 @@
     gap: 16px;
   }
 }
+
+// Search Section
+.search-section {
+  padding: 40px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  margin: 0 24px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  }
+}
+
+.search-container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.search-title {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  padding: 8px 0;
+  line-height: 1.3;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* Fallback para navegadores que no soportan background-clip */
+  color: white;
+}
+
+.search-wrapper {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.search-status {
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0 20px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus-within {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #667eea;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+  }
+}
+
+.search-icon {
+  color: rgba(255, 255, 255, 0.8);
+  margin-right: 12px;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 16px;
+  padding: 16px 0;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.clear-search-btn {
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: white;
+  }
+}
+
+// Responsive adjustments for search
+@media (max-width: 768px) {
+  .search-section {
+    margin: 0 16px;
+    padding: 32px 20px;
+  }
+
+  .search-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  .search-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .search-input-wrapper {
+    min-width: unset;
+    width: 100%;
+  }
+}

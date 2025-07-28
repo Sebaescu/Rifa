@@ -38,28 +38,14 @@ import { User } from '../../models/user.model';
             <button mat-icon-button class="mobile-menu-btn" (click)="toggleMobileMenu()">
               <mat-icon>menu</mat-icon>
             </button>
+          </div>
 
-            <!-- Logo -->
+          <div class="navbar-center">
+            <!-- Logo centrado -->
             <button mat-button routerLink="/" class="logo-btn">
               <mat-icon>casino</mat-icon>
               <span class="logo-text">RifApp</span>
             </button>
-          </div>
-
-          <div class="navbar-center">
-            <!-- Search bar -->
-            <div class="search-container">
-              <div class="search-wrapper">
-                <mat-icon class="search-icon">search</mat-icon>
-                <input
-                  type="text"
-                  placeholder="Buscar rifas..."
-                  [(ngModel)]="searchQuery"
-                  (keyup.enter)="onSearch()"
-                  class="search-input"
-                />
-              </div>
-            </div>
           </div>
 
           <div class="navbar-right">
@@ -556,14 +542,30 @@ import { User } from '../../models/user.model';
       align-items: center;
       justify-content: space-between;
       width: 100%;
+      position: relative;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      min-width: 120px; /* Espacio mínimo para el mobile menu */
     }
 
     .navbar-center {
-      flex: 1;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       justify-content: center;
-      max-width: 400px;
-      margin: 0 2rem;
+      align-items: center;
+    }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      min-width: 120px; /* Espacio mínimo simétrico */
+      justify-content: flex-end;
     }
 
     /* Mobile responsiveness para auth */
@@ -715,7 +717,6 @@ export class NavbarComponent implements OnInit {
   currentUser: User | null = null;
   cartItemCount = 0;
   activeRafflesCount = 0;
-  searchQuery = '';
   isMobile = false;
   isAuthRoute = false;
   isMobileMenuOpen = false;
@@ -784,6 +785,11 @@ export class NavbarComponent implements OnInit {
   }
 
   private loadCartCount() {
+    // Inicializar carrito para cargar datos actuales
+    if (this.currentUser) {
+      this.cartService.initializeCart();
+    }
+
     // Suscribirse al contador de items del carrito
     this.cartService.getItemCount().subscribe((count: number) => {
       this.cartItemCount = count;
@@ -811,14 +817,6 @@ export class NavbarComponent implements OnInit {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
-    }
-  }
-
-  onSearch() {
-    if (this.searchQuery.trim()) {
-      this.router.navigate(['/rifas'], {
-        queryParams: { search: this.searchQuery.trim() }
-      });
     }
   }
 

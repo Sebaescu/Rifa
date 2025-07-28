@@ -84,6 +84,19 @@ export class CartService {
     );
   }
 
+  // Método para inicializar el carrito automáticamente
+  initializeCart(): void {
+    this.getCart().subscribe({
+      next: (cart) => {
+        // El carrito se actualiza automáticamente via tap() en getCart()
+      },
+      error: (error) => {
+        console.error('Error loading cart:', error);
+        // En caso de error, mantener cart como null
+      }
+    });
+  }
+
   private refreshCart(): void {
     this.getCart().subscribe();
   }
