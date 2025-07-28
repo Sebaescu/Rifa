@@ -33,14 +33,23 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# En producción, agregar el dominio de Railway automáticamente
+# En producción, agregar dominios de Railway automáticamente
 RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL')
+RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+
 if RAILWAY_STATIC_URL:
     ALLOWED_HOSTS.append(RAILWAY_STATIC_URL.replace('https://', '').replace('http://', ''))
+
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
 
 # También permitir cualquier subdominio de railway.app en producción
 if not DEBUG:
     ALLOWED_HOSTS.extend(['*.railway.app', '*.up.railway.app'])
+
+# Para desarrollo, permitir todas las IPs si DEBUG=True
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
 
 
 # Application definition
