@@ -167,11 +167,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Configuración de archivos estáticos para producción
+STATICFILES_DIRS = []
+
 # Whitenoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    WHITENOISE_USE_FINDERS = True
+    WHITENOISE_AUTOREFRESH = True
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
@@ -245,7 +251,7 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Angular dev server
     "http://127.0.0.1:4200",
-    "https://sebaescu.github.io",  # GitHub Pages (ajusta con tu usuario)
+    "https://sebaescu.github.io",  # GitHub Pages
 ]
 
 # En producción, permitir desde GitHub Pages

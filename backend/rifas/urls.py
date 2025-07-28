@@ -1,9 +1,26 @@
 from django.urls import path
 from . import views
+from django.http import JsonResponse
+
+def api_root(request):
+    """API root endpoint"""
+    return JsonResponse({
+        "message": "Rifa API is running",
+        "version": "1.0",
+        "endpoints": {
+            "raffles": "/api/raffles/",
+            "locations": "/api/locations/",
+            "auth": "/api/auth/",
+            "admin": "/admin/"
+        }
+    })
 
 app_name = 'rifas'
 
 urlpatterns = [
+    # API Root
+    path('', api_root, name='api_root'),
+    
     # Location URLs
     path('locations/', views.LocationListView.as_view(), name='location_list'),
     path('location/from-coordinates/', views.location_from_coordinates, name='location_from_coordinates'),
