@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { StatisticsService } from '../../../core/services/statistics.service';
 import { LocationApiService, Country, State } from '../../../core/services/location-api.service';
+import { Raffle } from '../../../shared/models/raffle.model';
 @Component({
   selector: 'app-create-raffle',
   standalone: false,
@@ -17,6 +18,11 @@ export class CreateRaffleComponent implements OnInit {
   isLoading = false;
   selectedImage: File | null = null;
   imagePreview: string | null = null;
+
+  // Modo edición
+  isEditMode = false;
+  raffleId: number | null = null;
+  currentRaffle: Raffle | null = null;
 
   // Loading states
   loadingCountries = true;
@@ -40,6 +46,7 @@ export class CreateRaffleComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private raffleService: RaffleService,
     private statisticsService: StatisticsService,
@@ -47,9 +54,21 @@ export class CreateRaffleComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Detectar modo edición
+    const id = this.route.snapshot.params['id'];
+    if (id) {
+      this.isEditMode = true;
+      this.raffleId = +id;
+    }
+
     this.initializeForm();
     this.setupFormSubscriptions();
     this.loadCountries();
+
+    // Si estamos en modo edición, cargar la rifa
+    if (this.isEditMode && this.raffleId) {
+      this.loadRaffleForEdit();
+    }
   }
 
   initializeForm(): void {
@@ -77,7 +96,9 @@ export class CreateRaffleComponent implements OnInit {
     // Observar selección de país para cargar estados (solo para scope provincial)
     this.raffleForm.get('selectedCountry')?.valueChanges.subscribe(countryCode => {
       if (countryCode && this.raffleForm.get('scope')?.value === 'provincial') {
-        this.loadStatesForCountry(countryCode);
+        this.loadStatesForCountry(countryCode).catch(error => {
+          console.error('Error loading states:', error);
+        });
       } else {
         this.availableStates = [];
         this.clearStatesSelection();
@@ -166,26 +187,30 @@ export class CreateRaffleComponent implements OnInit {
     statesControl?.updateValueAndValidity();
   }
 
-  loadStatesForCountry(countryCode: string): void {
-    this.loadingStates = true;
-    this.availableStates = [];
-    this.clearStatesSelection();
+  loadStatesForCountry(countryCode: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.loadingStates = true;
+      this.availableStates = [];
+      this.clearStatesSelection();
 
-    // Cargar estados del país seleccionado
-    this.locationApiService.getStatesByCountry(countryCode).subscribe({
-      next: (states: State[]) => {
-        this.availableStates = states.sort((a: State, b: State) => a.name.localeCompare(b.name));
-        this.initializeStatesFormArray();
-        this.loadingStates = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar estados:', error);
-        this.snackBar.open('Error al cargar los estados. Intenta más tarde.', 'Cerrar', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-        this.loadingStates = false;
-      }
+      // Cargar estados del país seleccionado
+      this.locationApiService.getStatesByCountry(countryCode).subscribe({
+        next: (states: State[]) => {
+          this.availableStates = states.sort((a: State, b: State) => a.name.localeCompare(b.name));
+          this.initializeStatesFormArray();
+          this.loadingStates = false;
+          resolve();
+        },
+        error: (error: any) => {
+          console.error('Error al cargar estados:', error);
+          this.snackBar.open('Error al cargar los estados. Intenta más tarde.', 'Cerrar', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          this.loadingStates = false;
+          reject(error);
+        }
+      });
     });
   }
 
@@ -396,24 +421,28 @@ export class CreateRaffleComponent implements OnInit {
       image_name: createRaffleRequest.image_name || 'No image name'
     });
 
-    // Llamada real al servicio
-    this.raffleService.createRaffle(createRaffleRequest).subscribe({
+    const serviceCall = this.isEditMode && this.raffleId
+      ? this.raffleService.updateRaffle(this.raffleId, createRaffleRequest)
+      : this.raffleService.createRaffle(createRaffleRequest);
+
+    serviceCall.subscribe({
       next: (response) => {
         this.isLoading = false;
-        console.log('Raffle created successfully:', response);
+        console.log(`Raffle ${this.isEditMode ? 'updated' : 'created'} successfully:`, response);
 
-        // Actualizar estadísticas después de crear la rifa
+        // Actualizar estadísticas después de crear/editar la rifa
         this.statisticsService.forceRefresh();
 
-        this.snackBar.open('¡Rifa creada exitosamente!', 'Cerrar', {
+        const message = this.isEditMode ? '¡Rifa actualizada exitosamente!' : '¡Rifa creada exitosamente!';
+        this.snackBar.open(message, 'Cerrar', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        this.router.navigate(['/manage-raffles']);
+        this.router.navigate(['/my-raffles']);
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Error creating raffle:', error);
+        console.error(`Error ${this.isEditMode ? 'updating' : 'creating'} raffle:`, error);
         console.error('Error details:', error.error);
         console.error('Error message:', error.message);
         console.error('Error status:', error.status);
@@ -426,7 +455,11 @@ export class CreateRaffleComponent implements OnInit {
           });
         }
 
-        this.snackBar.open('Error al crear la rifa. Revisa la consola para más detalles.', 'Cerrar', {
+        const message = this.isEditMode
+          ? 'Error al actualizar la rifa. Revisa la consola para más detalles.'
+          : 'Error al crear la rifa. Revisa la consola para más detalles.';
+
+        this.snackBar.open(message, 'Cerrar', {
           duration: 5000,
           panelClass: ['error-snackbar']
         });
@@ -475,6 +508,138 @@ export class CreateRaffleComponent implements OnInit {
     }
 
     return allowedLocations;
+  }
+
+  // Métodos para modo edición
+  loadRaffleForEdit(): void {
+    if (!this.raffleId) return;
+
+    this.isLoading = true;
+    this.raffleService.getRaffle(this.raffleId).subscribe({
+      next: (raffle: any) => {
+        this.currentRaffle = raffle;
+        this.populateForm(raffle);
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        console.error('Error loading raffle for edit:', error);
+        this.snackBar.open('Error al cargar la rifa para editar', 'Cerrar', { duration: 3000 });
+        this.router.navigate(['/my-raffles']);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  populateForm(raffle: Raffle): void {
+    // Formatear fechas para el input datetime-local
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+    };
+
+    // Cargar imagen si existe
+    if (raffle.image) {
+      this.imagePreview = this.getImageUrl(raffle.image);
+    }
+
+    // Llenar formulario básico
+    this.raffleForm.patchValue({
+      name: raffle.name,
+      description: raffle.description,
+      terms_conditions: raffle.terms_conditions,
+      ticket_price: raffle.ticket_price,
+      total_tickets: raffle.total_tickets,
+      start_date: formatDate(raffle.start_date),
+      end_date: formatDate(raffle.end_date),
+      scope: raffle.scope
+    });
+
+    // Configurar ubicaciones según el scope
+    this.setupLocationsForEdit(raffle);
+  }
+
+  setupLocationsForEdit(raffle: Raffle): void {
+    if (!raffle.allowed_locations || raffle.allowed_locations.length === 0) return;
+
+    switch (raffle.scope) {
+      case 'national':
+        // Para nacional, solo hay un país
+        const countryLocation = raffle.allowed_locations.find(loc => loc.country_code);
+        if (countryLocation) {
+          this.raffleForm.patchValue({
+            selectedCountry: countryLocation.country_code
+          });
+        }
+        break;
+
+      case 'provincial':
+        // Para provincial, cargar país y estados
+        const firstLocation = raffle.allowed_locations[0];
+        if (firstLocation?.country_code) {
+          this.raffleForm.patchValue({
+            selectedCountry: firstLocation.country_code
+          });
+
+          // Cargar estados del país y marcar los seleccionados
+          this.loadStatesForCountry(firstLocation.country_code).then(() => {
+            this.markSelectedStates(raffle.allowed_locations);
+          });
+        }
+        break;
+
+      case 'international':
+        // Para internacional, marcar países seleccionados
+        this.markSelectedCountries(raffle.allowed_locations);
+        break;
+    }
+  }
+
+  markSelectedCountries(allowedLocations: any[]): void {
+    const selectedCountryCodes = allowedLocations.map(loc => loc.country_code);
+
+    this.selectedCountriesFormArray.clear();
+    this.availableCountries.forEach(country => {
+      const isSelected = selectedCountryCodes.includes(country.iso2);
+      this.selectedCountriesFormArray.push(new FormControl(isSelected));
+    });
+  }
+
+  markSelectedStates(allowedLocations: any[]): void {
+    const selectedStateCodes = allowedLocations.map(loc => loc.state_code).filter(code => code);
+
+    this.selectedStatesFormArray.clear();
+    this.availableStates.forEach(state => {
+      const isSelected = selectedStateCodes.includes(state.state_code);
+      this.selectedStatesFormArray.push(new FormControl(isSelected));
+    });
+  }
+
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) {
+      return '/assets/images/default-raffle.jpg';
+    }
+
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+
+    const baseUrl = 'http://localhost:8000';
+    return `${baseUrl}${imageUrl}`;
+  }
+
+  canEditRaffle(): boolean {
+    if (!this.currentRaffle) return false;
+
+    // Solo se puede editar si la rifa está inactiva
+    return this.currentRaffle.status === 'inactive';
+  }
+
+  getPageTitle(): string {
+    return this.isEditMode ? 'Editar Rifa' : 'Crear Nueva Rifa';
+  }
+
+  getSubmitButtonText(): string {
+    return this.isEditMode ? 'Actualizar Rifa' : 'Crear Rifa';
   }
 
   private markFormGroupTouched(): void {

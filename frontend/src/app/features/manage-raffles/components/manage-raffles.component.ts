@@ -181,13 +181,41 @@ import { User } from '../../../shared/models/user.model';
               Resultados
             </button>
 
-            <button mat-button color="accent" [routerLink]="['/raffles/edit', raffle.id]">
+            <button *ngIf="canEditRaffle(raffle)"
+                    mat-button
+                    color="accent"
+                    [routerLink]="['/raffles/create', raffle.id]">
               <mat-icon>edit</mat-icon>
               Editar
             </button>
-            <button mat-button color="warn" (click)="confirmDelete(raffle)">
+
+            <!-- Botón deshabilitado con tooltip para rifas que no se pueden editar -->
+            <button *ngIf="!canEditRaffle(raffle)"
+                    mat-button
+                    disabled
+                    matTooltip="No se puede editar una rifa que ya ha comenzado o está activa"
+                    matTooltipPosition="above">
+              <mat-icon>edit_off</mat-icon>
+              No Editable
+            </button>
+
+            <!-- Botón Eliminar - Solo para rifas que se pueden eliminar -->
+            <button *ngIf="canDeleteRaffle(raffle)"
+                    mat-button
+                    color="warn"
+                    (click)="confirmDelete(raffle)">
               <mat-icon>delete</mat-icon>
               Eliminar
+            </button>
+
+            <!-- Botón deshabilitado con tooltip para rifas que no se pueden eliminar -->
+            <button *ngIf="!canDeleteRaffle(raffle)"
+                    mat-button
+                    disabled
+                    matTooltip="No se puede eliminar una rifa que ya ha comenzado o está activa"
+                    matTooltipPosition="above">
+              <mat-icon>delete_off</mat-icon>
+              No Eliminable
             </button>
           </div>
         </div>
@@ -323,9 +351,36 @@ export class ManageRafflesComponent implements OnInit {
   }
 
   confirmDelete(raffle: Raffle): void {
+    if (!this.canDeleteRaffle(raffle)) {
+      alert('No se puede eliminar una rifa que ya ha comenzado o está activa.');
+      return;
+    }
+
     if (confirm(`¿Estás seguro de que deseas eliminar la rifa "${raffle.name}"? Esta acción no se puede deshacer.`)) {
       this.deleteRaffle(raffle);
     }
+  }
+
+  canEditRaffle(raffle: Raffle): boolean {
+    // Solo se pueden editar rifas que aún no han comenzado (status 'inactive')
+    const now = new Date();
+    const startDate = new Date(raffle.start_date);
+
+    // Una rifa se puede editar si:
+    // 1. Su fecha de inicio aún no ha llegado
+    // 2. No tiene tickets vendidos (opcional, pero recomendado)
+    return startDate > now;
+  }
+
+  canDeleteRaffle(raffle: Raffle): boolean {
+    // Solo se pueden eliminar rifas que aún no han comenzado (status 'inactive')
+    const now = new Date();
+    const startDate = new Date(raffle.start_date);
+
+    // Una rifa se puede eliminar si:
+    // 1. Su fecha de inicio aún no ha llegado
+    // 2. No está activa ni completada
+    return startDate > now;
   }
 
   isReadyForDraw(raffle: Raffle): boolean {

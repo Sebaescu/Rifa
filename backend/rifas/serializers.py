@@ -124,40 +124,96 @@ class RaffleCreateSerializer(serializers.ModelSerializer):
                  'scope', 'allowed_locations', 'image_base64', 'image_name']
     
     def create(self, validated_data):
-        print(f"DEBUG: Creating raffle with validated_data keys: {list(validated_data.keys())}")
+        from django.utils import timezone
+        
         
         allowed_locations_data = validated_data.pop('allowed_locations', [])
         image_base64 = validated_data.pop('image_base64', None)
         image_name = validated_data.pop('image_name', None)
         
-        print(f"DEBUG: Image base64 present: {bool(image_base64)}")
-        print(f"DEBUG: Image base64 length: {len(image_base64) if image_base64 else 0}")
-        print(f"DEBUG: Image name: {image_name}")
+        
+        # Determine status based on start_date
+        start_date = validated_data.get('start_date')
+        now = timezone.now()
+        
+        if start_date and start_date > now:
+            validated_data['status'] = 'inactive'  # Starts in the future
+        else:
+            validated_data['status'] = 'active'    # Starts now or in the past
         
         # Process base64 image if provided
         if image_base64 and image_name:
             try:
-                print(f"DEBUG: Processing base64 image...")
                 # Extract the base64 content (remove data:image/...;base64, prefix)
                 format, imgstr = image_base64.split(';base64,')
                 ext = format.split('/')[-1]
-                print(f"DEBUG: Image format: {format}, extension: {ext}")
                 
                 # Create Django file from base64
                 image_data = base64.b64decode(imgstr)
-                print(f"DEBUG: Decoded image data length: {len(image_data)}")
                 validated_data['image'] = ContentFile(image_data, name=image_name)
-                print(f"DEBUG: Image file created successfully")
             except Exception as e:
                 print(f"ERROR processing image: {e}")
                 import traceback
                 traceback.print_exc()
         else:
-            print(f"DEBUG: No image data provided")
+            pass  # No image data provided
         
         validated_data['created_by'] = self.context['request'].user
         
         raffle = super().create(validated_data)
+        
+        # Process allowed_locations from frontend
+        if allowed_locations_data:
+            locations = []
+            for location_data in allowed_locations_data:
+                location, created = Location.objects.get_or_create(
+                    country=location_data.get('country_name', ''),
+                    country_code=location_data.get('country_code', ''),
+                    state=location_data.get('state_name', '') if location_data.get('type') == 'state' else '',
+                    defaults={
+                        'city': '',  # No city for country/state level
+                    }
+                )
+                locations.append(location)
+            
+            raffle.allowed_locations.set(locations)
+        
+        return raffle
+
+    def update(self, instance, validated_data):
+        from django.utils import timezone
+        
+        
+        allowed_locations_data = validated_data.pop('allowed_locations', [])
+        image_base64 = validated_data.pop('image_base64', None)
+        image_name = validated_data.pop('image_name', None)
+        
+        # Determine status based on start_date
+        start_date = validated_data.get('start_date', instance.start_date)
+        now = timezone.now()
+        
+        if start_date and start_date > now:
+            validated_data['status'] = 'inactive'  # Starts in the future
+        else:
+            validated_data['status'] = 'active'    # Starts now or in the past
+        
+        # Process base64 image if provided
+        if image_base64 and image_name:
+            try:
+                # Extract the base64 content (remove data:image/...;base64, prefix)
+                format, imgstr = image_base64.split(';base64,')
+                ext = format.split('/')[-1]
+                
+                # Create Django file from base64
+                image_data = base64.b64decode(imgstr)
+                validated_data['image'] = ContentFile(image_data, name=image_name)
+            except Exception as e:
+                print(f"ERROR processing image for update: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Update the raffle
+        raffle = super().update(instance, validated_data)
         
         # Process allowed_locations from frontend
         if allowed_locations_data:

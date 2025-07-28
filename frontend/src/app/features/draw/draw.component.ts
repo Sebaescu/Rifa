@@ -54,24 +54,12 @@ export class DrawComponent implements OnInit {
 
         // Si estamos en modo resultados, verificar que tenga ganador
         if (this.isResultsMode) {
-          console.log('In results mode - checking for winner data');
-          console.log('Raffle status:', raffle.status);
-          console.log('Winner data check:', {
-            winner_ticket: raffle.winner_ticket,
-            winner_name: raffle.winner_name,
-            winner_email: raffle.winner_email,
-            draw_date: raffle.draw_date
-          });
-
           if (raffle.status === 'completed' && raffle.winner_ticket) {
             this.winner = {
               ticket_number: raffle.winner_ticket,
               user_name: raffle.winner_name,
               user_email: raffle.winner_email
             };
-            console.log('Winner data loaded:', this.winner);
-          } else {
-            console.log('No winner data found or raffle not completed');
           }
         }
       },
@@ -129,8 +117,6 @@ export class DrawComponent implements OnInit {
           this.raffle.winner_email = drawResult.winner_email;
 
           this.isDrawing = false;
-
-          console.log('Sorteo completado:', this.winner);
 
           // Actualizar el estado de la rifa a completada
           this.updateRaffleToCompleted();

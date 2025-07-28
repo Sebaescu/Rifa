@@ -9,9 +9,25 @@
       </div>
     </div>
     <div class="hero-content">
-      <h1 class="hero-title">Crear Nueva Rifa</h1>
+      <h1 class="hero-title">{{ getPageTitle() }}</h1>
       <p class="hero-subtitle">Crea tu propia rifa y comparte premios increíbles</p>
     </div>
+  </div>
+
+  <!-- Alerta para rifas que no se pueden editar -->
+  <div *ngIf="isEditMode && currentRaffle && !canEditRaffle()" class="edit-warning">
+    <mat-card class="warning-card">
+      <mat-card-content>
+        <div class="warning-content">
+          <mat-icon class="warning-icon">warning</mat-icon>
+          <div class="warning-text">
+            <h3>No se puede editar esta rifa</h3>
+            <p>Solo se pueden editar las rifas que están <strong>inactivas</strong> (que aún no han comenzado).</p>
+            <p>Estado actual: <strong>{{ currentRaffle.status }}</strong></p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
   </div>
 
   <!-- Form Section -->
@@ -370,10 +386,10 @@
         <button type="submit"
                 mat-raised-button
                 color="primary"
-                [disabled]="raffleForm.invalid || isLoading">
-          <mat-icon *ngIf="!isLoading">save</mat-icon>
+                [disabled]="raffleForm.invalid || isLoading || (isEditMode && !canEditRaffle())">
+          <mat-icon *ngIf="!isLoading">{{ isEditMode ? 'update' : 'save' }}</mat-icon>
           <mat-spinner *ngIf="isLoading" diameter="20" color="accent"></mat-spinner>
-          {{ isLoading ? 'Creando...' : 'Crear Rifa' }}
+          {{ isLoading ? (isEditMode ? 'Actualizando...' : 'Creando...') : getSubmitButtonText() }}
         </button>
       </div>
 

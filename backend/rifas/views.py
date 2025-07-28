@@ -1,6 +1,7 @@
 from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
@@ -135,7 +136,6 @@ class RaffleListView(generics.ListAPIView):
             response = requests.get(url, timeout=5)
             
             if response.status_code != 200:
-                print(f"DEBUG: Failed to get user location, showing all raffles")
                 return queryset
             
             location_data = response.json()
@@ -143,7 +143,6 @@ class RaffleListView(generics.ListAPIView):
             user_country_code = location_data.get('countryCode', '')
             user_state = location_data.get('principalSubdivision', '')
             
-            print(f"DEBUG: User location - Country: {user_country}, State: {user_state}, Country Code: {user_country_code}")
             
             filtered_raffle_ids = []
             
@@ -189,11 +188,9 @@ class RaffleListView(generics.ListAPIView):
                 if should_include:
                     filtered_raffle_ids.append(raffle.id)
                     
-            print(f"DEBUG: Filtered {len(filtered_raffle_ids)} raffles out of {queryset.count()}")
             return queryset.filter(id__in=filtered_raffle_ids)
             
         except Exception as e:
-            print(f"DEBUG: Error filtering by location: {e}")
             # If there's an error, return all raffles
             return queryset
     
@@ -213,18 +210,10 @@ class RaffleCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def create(self, request, *args, **kwargs):
-        print(f"DEBUG: Request method: {request.method}")
-        print(f"DEBUG: Content type: {request.content_type}")
-        print(f"DEBUG: Request data: {request.data}")
-        print(f"DEBUG: Request FILES: {request.FILES}")
-        print(f"DEBUG: User authenticated: {request.user.is_authenticated}")
-        print(f"DEBUG: User: {request.user}")
         
         try:
             return super().create(request, *args, **kwargs)
         except Exception as e:
-            print(f"DEBUG: Exception in create: {e}")
-            print(f"DEBUG: Exception type: {type(e)}")
             import traceback
             traceback.print_exc()
             raise
@@ -240,15 +229,31 @@ class RaffleDetailView(generics.RetrieveUpdateDestroyAPIView):
         return [permissions.AllowAny()]
     
     def perform_update(self, serializer):
+        raffle = self.get_object()
+        
         # Only allow owner to update
-        if self.get_object().created_by != self.request.user:
+        if raffle.created_by != self.request.user:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Only allow editing if raffle is inactive
+        if raffle.status != 'inactive':
+            return Response({
+                'error': 'Solo se pueden editar rifas que están inactivas (que aún no han comenzado)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer.save()
     
     def perform_destroy(self, instance):
         # Only allow owner to delete
         if instance.created_by != self.request.user:
-            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No tienes permisos para eliminar esta rifa')
+        
+        # Only allow deletion of inactive raffles (that haven't started yet)
+        now = timezone.now()
+        
+        if instance.start_date <= now:
+            raise ValidationError('Solo se pueden eliminar rifas que aún no han comenzado')
+        
         instance.delete()
 
 class UserRafflesView(generics.ListAPIView):
@@ -631,11 +636,9 @@ def send_winner_notification_email(raffle, winner_user, winning_ticket_number):
             fail_silently=False
         )
         
-        print(f"DEBUG: Winner notification email sent successfully to {winner_user.email}")
         return True
         
     except Exception as e:
-        print(f"DEBUG: Error sending winner notification email: {str(e)}")
         return False
 
 @api_view(['POST'])
@@ -648,10 +651,6 @@ def perform_raffle_draw(request, raffle_id):
     try:
         raffle = get_object_or_404(Raffle, id=raffle_id)
         
-        print(f"DEBUG: Starting draw for raffle {raffle_id}")
-        print(f"DEBUG: Raffle status: {raffle.status}")
-        print(f"DEBUG: Raffle created by: {raffle.created_by}")
-        print(f"DEBUG: Request user: {request.user}")
         
         # Check if user is the creator of the raffle
         if raffle.created_by != request.user:
@@ -678,9 +677,8 @@ def perform_raffle_draw(request, raffle_id):
             purchased_by__isnull=False
         ).select_related('purchased_by')
         
-        print(f"DEBUG: Found {sold_tickets.count()} sold tickets")
         for ticket in sold_tickets:
-            print(f"DEBUG: Ticket #{ticket.number} bought by {ticket.purchased_by.username}")
+            pass  # Process tickets if needed
         
         if not sold_tickets.exists():
             return Response({
@@ -691,10 +689,6 @@ def perform_raffle_draw(request, raffle_id):
         winning_ticket = random.choice(sold_tickets)
         winner_user = winning_ticket.purchased_by
         
-        print(f"DEBUG: Selected winning ticket #{winning_ticket.number}")
-        print(f"DEBUG: Winner user: {winner_user.username}")
-        print(f"DEBUG: Winner name: {winner_user.first_name} {winner_user.last_name}")
-        print(f"DEBUG: Winner email: {winner_user.email}")
         
         # Update raffle with winner information
         raffle.draw_date = timezone.now()
@@ -702,15 +696,9 @@ def perform_raffle_draw(request, raffle_id):
         raffle.winner_name = f"{winner_user.first_name} {winner_user.last_name}".strip() or winner_user.username
         raffle.winner_email = winner_user.email
         
-        print(f"DEBUG: Before save - raffle.winner_ticket: {raffle.winner_ticket}")
-        print(f"DEBUG: Before save - raffle.winner_name: {raffle.winner_name}")
-        print(f"DEBUG: Before save - raffle.winner_email: {raffle.winner_email}")
         
         raffle.save()
         
-        print(f"DEBUG: After save - raffle.winner_ticket: {raffle.winner_ticket}")
-        print(f"DEBUG: After save - raffle.winner_name: {raffle.winner_name}")
-        print(f"DEBUG: After save - raffle.winner_email: {raffle.winner_email}")
         
         # Send winner notification email
         email_sent = send_winner_notification_email(raffle, winner_user, winning_ticket.number)

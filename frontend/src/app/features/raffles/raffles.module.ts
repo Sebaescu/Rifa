@@ -24,6 +24,7 @@ import { TicketSelectionComponent } from './ticket-selection/ticket-selection.co
 const routes: Routes = [
   { path: '', component: RaffleListComponent },
   { path: 'create', component: CreateRaffleComponent },
+  { path: 'create/:id', component: CreateRaffleComponent }, // Ruta para editar rifa
   { path: ':id/tickets', component: TicketSelectionComponent },
   { path: ':id', component: RaffleListComponent } // Temporary, will create detail component later
 ];

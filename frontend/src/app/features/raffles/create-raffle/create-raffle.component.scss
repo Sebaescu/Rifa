@@ -679,4 +679,53 @@
       color: rgba(255, 255, 255, 0.9) !important;
     }
   }
+
+  // Estilos para alerta de edición
+  .edit-warning {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    padding: 0 20px;
+
+    .warning-card {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+      border: 2px solid #ff7675;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(255, 118, 117, 0.2);
+
+      .warning-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+
+        .warning-icon {
+          color: #d63031;
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+          margin-top: 4px;
+        }
+
+        .warning-text {
+          flex: 1;
+
+          h3 {
+            margin: 0 0 8px 0;
+            color: #d63031;
+            font-size: 1.2rem;
+            font-weight: 600;
+          }
+
+          p {
+            margin: 4px 0;
+            color: #2d3436;
+            line-height: 1.5;
+
+            strong {
+              color: #d63031;
+            }
+          }
+        }
+      }
+    }
+  }
 }
