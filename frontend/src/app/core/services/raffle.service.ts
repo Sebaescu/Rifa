@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, BehaviorSubject } from 'rxjs';
 import { Raffle, RaffleDetail, CreateRaffleRequest, Ticket, Location, UserLocation } from '../../shared/models/raffle.model';
@@ -7,7 +8,7 @@ import { Raffle, RaffleDetail, CreateRaffleRequest, Ticket, Location, UserLocati
   providedIn: 'root'
 })
 export class RaffleService {
-  private readonly API_URL = 'http://localhost:8000/api';
+  private readonly API_URL = environment.apiUrl;
   private userLocationSubject = new BehaviorSubject<UserLocation | null>(null);
   public userLocation$ = this.userLocationSubject.asObservable();
 

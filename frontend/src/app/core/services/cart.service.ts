@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, map } from 'rxjs';
 import { Cart, AddToCartRequest, Order, CheckoutRequest, UserTickets } from '../../shared/models/cart.model';
@@ -7,7 +8,7 @@ import { Cart, AddToCartRequest, Order, CheckoutRequest, UserTickets } from '../
   providedIn: 'root'
 })
 export class CartService {
-  private readonly API_URL = 'http://localhost:8000/api';
+  private readonly API_URL = environment.apiUrl;
   private cartSubject = new BehaviorSubject<Cart | null>(null);
 
   public cart$ = this.cartSubject.asObservable();

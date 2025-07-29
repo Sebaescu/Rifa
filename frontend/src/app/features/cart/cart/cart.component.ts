@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -167,7 +168,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return imageUrl;
     }
 
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = environment.apiUrl;
     return `${baseUrl}${imageUrl}`;
   }
 

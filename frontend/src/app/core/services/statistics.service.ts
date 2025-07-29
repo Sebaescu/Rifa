@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
@@ -12,7 +13,7 @@ export interface RaffleStatistics {
   providedIn: 'root'
 })
 export class StatisticsService {
-  private readonly API_URL = 'http://localhost:8000/api';
+  private readonly API_URL = environment.apiUrl;
   private statisticsSubject = new BehaviorSubject<RaffleStatistics>({
     total_active_raffles: 0,
     total_raffles: 0,

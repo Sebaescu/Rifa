@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { Subscription, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -214,7 +215,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     // Si es una URL relativa, construir la URL completa
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = environment.apiUrl;
     return `${baseUrl}${imageUrl}`;
   }
 

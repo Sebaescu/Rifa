@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, map, catchError, of } from 'rxjs';
 import { User, AuthResponse, LoginRequest, RegisterRequest } from '../../shared/models/user.model';
@@ -7,7 +8,7 @@ import { User, AuthResponse, LoginRequest, RegisterRequest } from '../../shared/
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:8000/api/auth';
+  private readonly API_URL = environment.apiUrl + '/auth';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private tokenSubject = new BehaviorSubject<string | null>(null);
 

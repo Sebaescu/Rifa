@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -61,7 +62,7 @@ export class MyRafflesComponent implements OnInit {
       return imageUrl;
     }
 
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = environment.apiUrl;
     return `${baseUrl}${imageUrl}`;
   }
 

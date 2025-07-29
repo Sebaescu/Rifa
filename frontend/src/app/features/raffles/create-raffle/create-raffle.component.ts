@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -623,7 +624,7 @@ export class CreateRaffleComponent implements OnInit {
       return imageUrl;
     }
 
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = environment.apiUrl;
     return `${baseUrl}${imageUrl}`;
   }
 

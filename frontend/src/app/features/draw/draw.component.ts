@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RaffleService } from '../../core/services/raffle.service';
 import { Raffle } from '../../shared/models/raffle.model';
@@ -172,7 +173,7 @@ export class DrawComponent implements OnInit {
       return imageUrl;
     }
 
-    return `http://localhost:8000${imageUrl}`;
+    return `${environment.apiUrl.replace(/\/api\/?$/, '')}${imageUrl}`;
   }
 
   goBack(): void {

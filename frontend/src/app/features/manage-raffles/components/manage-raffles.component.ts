@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { RaffleService } from '../../../core/services/raffle.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -495,7 +496,7 @@ export class ManageRafflesComponent implements OnInit {
     }
 
     // Si es una URL relativa, construir la URL completa
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = environment.apiUrl;
     return `${baseUrl}${imageUrl}`;
   }
 }
