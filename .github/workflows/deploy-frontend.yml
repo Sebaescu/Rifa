@@ -44,7 +44,7 @@ jobs:
           };" > frontend/src/environments/environment.prod.ts
 
       - name: Print [environment.prod.ts](http://_vscodecontentref_/2)
-        run: cat [environment.prod.ts](http://_vscodecontentref_/3)
+        run: cat frontend/src/environments/environment.prod.ts
 
       - name: Build Angular app
         run: npm run build -- --configuration=production --base-href=/Rifa/
