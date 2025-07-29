@@ -1,3 +1,11 @@
+# Exponer headers CORS recomendados
+CORS_EXPOSE_HEADERS = [
+    'Content-Type',
+    'X-CSRFToken',
+    'Authorization',
+    'Access-Control-Allow-Origin',
+    'Access-Control-Allow-Credentials',
+]
 """
 Django settings for rifa_project project.
 
@@ -273,6 +281,15 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 # Configuración adicional para producción

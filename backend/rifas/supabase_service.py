@@ -3,6 +3,21 @@ from django.conf import settings
 import os
 
 class SupabaseService:
+    def test_connection(self):
+        """
+        Probar la conexión a Supabase realizando una consulta simple.
+        """
+        if not self.is_configured():
+            print("Supabase no está configurado")
+            return False
+        try:
+            # Intenta listar los buckets de storage como prueba
+            buckets = self.supabase.storage.list_buckets()
+            print(f"Buckets encontrados: {buckets}")
+            return True
+        except Exception as e:
+            print(f"Error probando conexión a Supabase: {e}")
+            return False
     """
     Servicio para interactuar con Supabase
     Útil para funcionalidades como almacenamiento de archivos, funciones edge, etc.
